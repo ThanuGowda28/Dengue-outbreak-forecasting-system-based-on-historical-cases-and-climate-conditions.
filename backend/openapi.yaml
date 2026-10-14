@@ -1,0 +1,777 @@
+openapi: 3.0.3
+info:
+  title: Dengue Forecasting API
+  version: 1.0.0
+  description: >
+    Flask REST API for verified accounts, user records, live weather,
+    dashboards, reports, administration, and saved-model inference. The model
+    provides preliminary case-count classifications, not a validated
+    operational outbreak forecast.
+servers:
+  - url: http://localhost:5000/api
+    description: Local development
+  - url: https://your-api.example.com/api
+    description: Replace with the configured deployment API URL before production
+tags:
+  - name: Health
+  - name: Authentication
+  - name: Weather
+  - name: Dashboard
+  - name: Prediction
+  - name: Reports
+  - name: Records
+  - name: Administration
+  - name: Contact
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Liveness probe
+      responses:
+        "200": { description: API process is live }
+  /health/database:
+    get:
+      tags: [Health]
+      summary: Database readiness probe
+      responses:
+        "200": { description: Database is available }
+        "503": { description: Database is unavailable }
+  /health/model:
+    get:
+      tags: [Health]
+      summary: Model availability probe
+      responses:
+        "200": { description: Model bundle is loaded }
+        "503": { description: Model bundle is unavailable }
+  /health/weather:
+    get:
+      tags: [Health]
+      summary: Weather provider configuration probe
+      responses:
+        "200": { description: OpenWeather is configured }
+        "503": { description: OpenWeather API key is missing }
+  /health/system:
+    get:
+      tags: [Health]
+      summary: System and database status
+      responses:
+        "200": { description: System metrics are available }
+        "503": { description: System probe failed }
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "201": { description: Account created; verification email sent; no session tokens issued }
+        "400": { description: Validation error }
+        "409": { description: Email already registered }
+        "503": { description: "Email delivery is unavailable; after a delivery failure the response includes account_created: true" }
+  /auth/email-verification:
+    post:
+      tags: [Authentication]
+      summary: Verify an email address using its single-use link, valid for 24 hours
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        "200": { description: Email verified; token consumed }
+        "400": { description: Invalid, expired, or already used verification token }
+        "429": { description: Verification request rate limit exceeded }
+  /auth/email-verification/resend:
+    post:
+      tags: [Authentication]
+      summary: Resend an email verification link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "202": { description: Generic response that does not disclose account existence }
+        "400": { description: Invalid email address }
+        "429": { description: Verification request rate limit exceeded }
+        "503": { description: Verification email delivery is unavailable }
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate using email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Access and refresh tokens returned }
+        "401": { description: Invalid credentials }
+        "403": { description: Email verification is required }
+  /admin/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate a verified administrator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200": { description: Administrator access and refresh tokens returned }
+        "400": { description: Invalid request body }
+        "401": { description: Invalid credentials or account is not an administrator }
+        "403": { description: Email verification is required }
+  /auth/profile:
+    get:
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Current account profile, including the is_verified email-verification status }
+        "401": { description: Authentication required }
+    put:
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Updated account profile, including the is_verified email-verification status }
+        "400": { description: Validation error }
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Token revoked }
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Access token refreshed }
+  /auth/change-password:
+    post:
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Password changed }
+        "400": { description: Validation error }
+        "401": { description: Authentication required or current password is invalid }
+  /auth/password-reset-request:
+    post:
+      tags: [Authentication]
+      summary: Request password reset instructions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        "202": { description: Generic response that does not disclose account existence }
+        "400": { description: Invalid email address }
+        "429": { description: Public request rate limit exceeded }
+        "503": { description: Email delivery is not configured or failed }
+  /auth/password-reset:
+    post:
+      tags: [Authentication]
+      summary: Set a new password using a one-hour recovery token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password, confirm_password]
+              properties:
+                token: { type: string }
+                password: { type: string, format: password }
+                confirm_password: { type: string, format: password }
+      responses:
+        "200": { description: Password changed; recovery token cannot be reused }
+        "400": { description: Invalid, expired, or already-used token, or invalid password }
+  /auth/settings:
+    get:
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Current user's saved preferences }
+        "401": { description: Authentication required }
+    put:
+      tags: [Authentication]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [alerts, weekly_summary, dark_mode]
+              properties:
+                alerts: { type: boolean }
+                weekly_summary: { type: boolean }
+                dark_mode: { type: boolean }
+      responses:
+        "200": { description: Preferences saved }
+        "400": { description: Invalid preferences }
+        "401": { description: Authentication required }
+  /contact:
+    post:
+      tags: [Contact]
+      summary: Send a website contact message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties:
+                name: { type: string, maxLength: 100 }
+                email: { type: string, format: email }
+                message: { type: string, maxLength: 5000 }
+      responses:
+        "202": { description: Contact email sent }
+        "400": { description: Invalid message fields }
+        "429": { description: Public request rate limit exceeded }
+        "503": { description: Contact delivery is not configured or failed }
+  /profile/emergency-contact:
+    get:
+      tags: [Records]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Current user's emergency contact, or null }
+        "401": { description: Authentication required }
+    put:
+      tags: [Records]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, phone]
+              properties:
+                name: { type: string }
+                phone: { type: string }
+      responses:
+        "200": { description: Emergency contact saved }
+        "400": { description: Invalid contact fields }
+        "401": { description: Authentication required }
+    delete:
+      tags: [Records]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Emergency contact deleted }
+        "401": { description: Authentication required }
+        "404": { description: Emergency contact not found }
+  /prescriptions:
+    get:
+      tags: [Records]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Current user's prescription transcriptions }
+        "401": { description: Authentication required }
+    post:
+      tags: [Records]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "201": { description: Prescription transcription created }
+        "400": { description: Invalid prescription fields }
+        "401": { description: Authentication required }
+  /prescriptions/{record_id}:
+    parameters:
+      - in: path
+        name: record_id
+        required: true
+        schema: { type: integer }
+    put:
+      tags: [Records]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Prescription transcription updated }
+        "400": { description: Invalid prescription fields }
+        "401": { description: Authentication required }
+        "404": { description: User-owned prescription not found }
+    delete:
+      tags: [Records]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Prescription transcription deleted }
+        "401": { description: Authentication required }
+        "404": { description: User-owned prescription not found }
+  /weather/districts:
+    get:
+      tags: [Weather]
+      responses:
+        "200": { description: Supported Karnataka district coordinates }
+  /weather/search:
+    get:
+      tags: [Weather]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Matching locations }
+        "400": { description: Invalid search query or coordinates }
+        "401": { description: Authentication required }
+        "429": { description: Per-user weather request limit exceeded }
+        "502": { description: Location provider returned invalid data or failed }
+        "503": { description: Provider credentials missing or provider unavailable }
+  /weather/current:
+    get:
+      tags: [Weather]
+      summary: Get authenticated current weather from OpenWeather
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: city
+          schema: { type: string }
+        - in: query
+          name: district
+          schema: { type: string }
+        - in: query
+          name: latitude
+          schema: { type: number }
+        - in: query
+          name: longitude
+          schema: { type: number }
+      responses:
+        "200": { description: Current conditions, source, location, and whether the provider response was cached }
+        "401": { description: Authentication required }
+        "400": { description: Invalid location }
+        "429": { description: Per-user weather request limit exceeded }
+        "502": { description: Provider returned an invalid response or request failed }
+        "503": { description: Provider credentials missing or rejected, or provider unavailable }
+  /weather/forecast:
+    get:
+      tags: [Weather]
+      summary: Get one to five days of authenticated OpenWeather forecast
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: city
+          schema: { type: string }
+        - in: query
+          name: district
+          schema: { type: string }
+        - in: query
+          name: days
+          schema: { type: integer, minimum: 1, maximum: 5, default: 5 }
+      responses:
+        "200": { description: Forecast intervals, source, location, and cache status }
+        "400": { description: Invalid location or day count }
+        "401": { description: Authentication required }
+        "429": { description: Per-user weather request limit exceeded }
+        "502": { description: Provider returned an invalid response or request failed }
+        "503": { description: Provider credentials missing or rejected, or provider unavailable }
+  /weather/history:
+    get:
+      tags: [Weather]
+      summary: Get authenticated historical daily climate data from NASA POWER
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: latitude
+          schema: { type: number }
+        - in: query
+          name: longitude
+          schema: { type: number }
+        - in: query
+          name: start_date
+          schema: { type: string, format: date }
+        - in: query
+          name: end_date
+          schema: { type: string, format: date }
+        - in: query
+          name: days
+          schema: { type: integer, minimum: 1, maximum: 90, default: 7 }
+      responses:
+        "200": { description: Historical observations, source, location, and cache status }
+        "400": { description: Invalid coordinates or date range }
+        "401": { description: Authentication required }
+        "429": { description: Per-user weather request limit exceeded }
+        "502": { description: Provider returned an invalid response or request failed }
+        "503": { description: Historical provider unavailable, misconfigured, or has no published observations for the selected range }
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      summary: Get the authenticated user's dashboard and generated informational alerts
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Current account data; alerts include today's Moderate/High saved model assessments when account notifications are enabled }
+        "401": { description: Authentication required }
+  /prediction/predict:
+    post:
+      tags: [Prediction]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Risk prediction and class probabilities }
+        "400": { description: Invalid prediction input }
+        "503": { description: Model artifacts are unavailable }
+  /prediction/history:
+    get:
+      tags: [Prediction]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Paginated prediction history }
+  /prediction/history/{prediction_id}:
+    parameters:
+      - in: path
+        name: prediction_id
+        required: true
+        schema: { type: integer }
+    delete:
+      tags: [Prediction]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Prediction history deleted }
+        "401": { description: Authentication required }
+        "404": { description: Prediction record not found or outside user scope }
+  /prediction/latest:
+    get:
+      tags: [Prediction]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Latest prediction, or null when no prediction is saved }
+  /prediction/model-info:
+    get:
+      tags: [Prediction]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Model metadata and availability }
+  /reports/weather:
+    get:
+      tags: [Reports]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: type
+          schema: { type: string, enum: [current, forecast, history] }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: district
+          schema: { type: string }
+        - in: query
+          name: start_date
+          schema: { type: string, format: date }
+        - in: query
+          name: end_date
+          schema: { type: string, format: date }
+      responses:
+        "200": { description: Paginated stored observations scoped to the authenticated account and filtered by type, district, and inclusive observation dates }
+        "400": { description: Invalid type, page, limit, or date range }
+        "401": { description: Authentication required }
+        "429": { description: Request limit exceeded }
+  /reports/statistics:
+    get:
+      tags: [Reports]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: district
+          schema: { type: string }
+        - in: query
+          name: start_date
+          schema: { type: string, format: date }
+        - in: query
+          name: end_date
+          schema: { type: string, format: date }
+      responses:
+        "200": { description: Weather statistics and climate trends scoped to the authenticated account and selected inclusive date range }
+        "400": { description: Invalid date range }
+        "401": { description: Authentication required }
+  /admin/reports:
+    get:
+      tags: [Reports]
+      summary: Get system-wide administrator reports for an optional date range
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: start_date
+          schema: { type: string, format: date }
+        - in: query
+          name: end_date
+          schema: { type: string, format: date }
+      responses:
+        "200": { description: Global report aggregates filtered by prediction time and weather record date; account totals remain all-time }
+        "400": { description: Invalid date range }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/dashboard:
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: System-wide administrator dashboard summary }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/analytics:
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Aggregated prediction, user, and weather analytics }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/users:
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: role
+          schema: { type: string, enum: [user, admin] }
+      responses:
+        "200": { description: Paginated user directory }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+    post:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "201": { description: Account created by administrator }
+        "400": { description: Invalid account fields }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "409": { description: Email already registered }
+  /admin/users/{user_id}:
+    parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema: { type: integer }
+    patch:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200": { description: Account updated }
+        "400": { description: Invalid account fields }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "404": { description: Account not found }
+        "409": { description: Last administrator cannot be demoted }
+    delete:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Account and associated records deleted }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "404": { description: Account not found }
+        "409": { description: Own or last-admin account cannot be deleted }
+  /admin/predictions:
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: state
+          schema: { type: string }
+        - in: query
+          name: risk
+          schema: { type: string, enum: [Low, Moderate, High] }
+      responses:
+        "200": { description: Paginated cross-account prediction records }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/predictions/{prediction_id}:
+    parameters:
+      - in: path
+        name: prediction_id
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Prediction record details }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "404": { description: Prediction not found }
+    delete:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Prediction deleted }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "404": { description: Prediction not found }
+  /admin/datasets:
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Inventory of isolated dataset uploads }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+    post:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201": { description: CSV uploaded to the isolated dataset area }
+        "400": { description: Invalid or unsupported upload }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/datasets/{relative_path}:
+    parameters:
+      - in: path
+        name: relative_path
+        required: true
+        description: Relative upload path such as uploads/file.csv; the route accepts path segments.
+        schema: { type: string }
+    delete:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Isolated uploaded dataset removed }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "404": { description: Upload not found }
+  /admin/climate-data:
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Paginated stored weather and climate records }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/model-status:
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Active inference model and staged training status }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+  /admin/model-training:
+    post:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "202": { description: Isolated model training job accepted }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "409": { description: Training data is unavailable or a training job is already running }
+        "503": { description: Training dependencies or data unavailable }
+  /admin/model-training/{job_id}:
+    parameters:
+      - in: path
+        name: job_id
+        required: true
+        schema: { type: string }
+    get:
+      tags: [Administration]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Training job status and results }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
+        "404": { description: Training job not found }
+  /prediction:
+    get:
+      tags: [Prediction]
+      deprecated: true
+      summary: Retired legacy prediction endpoint
+      security: [{ bearerAuth: [] }]
+      responses:
+        "401": { description: Authentication required }
+        "410": { description: Gone; use the supported predict and history endpoints }
+    post:
+      tags: [Prediction]
+      deprecated: true
+      summary: Retired legacy prediction endpoint
+      security: [{ bearerAuth: [] }]
+      responses:
+        "401": { description: Authentication required }
+        "410": { description: Gone; use the supported predict and history endpoints }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

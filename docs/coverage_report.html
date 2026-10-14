@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coverage Report - Dengue Forecasting System</title>
+  <style>
+    body { background: #f4f7f8; color: #18323a; font: 16px/1.6 system-ui, sans-serif; margin: 0; }
+    main { max-width: 900px; margin: 40px auto; padding: 0 22px; }
+    article { background: white; border: 1px solid #dce6e8; border-radius: 14px; margin: 18px 0; padding: 22px 26px; }
+    h1 { color: #007f73; }
+    .summary { background: #e6f5ed; border-radius: 10px; display: inline-block; padding: 14px 20px; }
+    .summary strong { font-size: 2rem; }
+    a { color: #006d9c; }
+    code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body><main>
+  <article>
+    <h1>Backend Coverage Summary</h1>
+    <div class="summary"><strong>52%</strong><br>backend/app line coverage</div>
+    <p>Coverage was measured with Python Coverage.py on the passing backend unittest suite. It is not frontend, integration, or end-to-end coverage.</p>
+  </article>
+  <article>
+    <h2>Interpretation</h2>
+    <ul>
+      <li>Total measured statements: 2,443; missed statements: 1,175.</li>
+      <li>Core tested weather/report/repository modules have higher coverage, while the weather-provider client and climate acquisition logic have untested branches.</li>
+      <li>Authentication routes are only 17% covered; a dedicated registration/login/profile/change-password/logout test suite is needed.</li>
+      <li>The standalone ANN training module is 0% covered by this API/pipeline suite; prediction-service inference is 18% because the service is replaced by a test stub.</li>
+    </ul>
+    <p>The detailed per-file annotated report is available at <a href="./coverage/index.html">coverage/index.html</a>.</p>
+  </article>
+  <article>
+    <h2>Reproduce</h2>
+    <pre><code>python -m coverage run --source=backend/app -m unittest discover -s backend\tests
+python -m coverage report -m
+python -m coverage html -d docs\coverage</code></pre>
+  </article>
+</main></body>
+</html>

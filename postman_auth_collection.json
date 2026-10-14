@@ -1,0 +1,333 @@
+{
+  "info": {
+    "_postman_id": "e40290c6-607b-4e54-b5ab-260106d853e2",
+    "name": "Dengue API - Authentication",
+    "description": "Authentication API tests for the Flask backend. Run requests in order using the Collection Runner. Refresh is intentionally before logout because logout revokes the refresh token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api"
+    },
+    {
+      "key": "email",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": "StrongPass1!"
+    },
+    {
+      "key": "access_token",
+      "value": ""
+    },
+    {
+      "key": "refresh_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Successful registration",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('email', 'postman-' + Date.now() + '@example.test');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201 Created', function () { pm.response.to.have.status(201); });",
+              "const body = pm.response.json();",
+              "pm.test('Response contains user and both JWTs', function () {",
+              "  pm.expect(body).to.have.property('message', 'Registration successful.');",
+              "  pm.expect(body.user).to.have.property('email', pm.collectionVariables.get('email'));",
+              "  pm.expect(body.user).to.have.property('role', 'user');",
+              "  pm.expect(body.user).not.to.have.property('password_hash');",
+              "  pm.expect(body).to.have.property('access_token').that.is.a('string').and.not.empty;",
+              "  pm.expect(body).to.have.property('refresh_token').that.is.a('string').and.not.empty;",
+              "});",
+              "pm.collectionVariables.set('access_token', body.access_token);",
+              "pm.collectionVariables.set('refresh_token', body.refresh_token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Postman Test User\",\n  \"email\": \"{{email}}\",\n  \"phone\": \"+1 555 555 1234\",\n  \"district\": \"Mysuru\",\n  \"state\": \"Karnataka\",\n  \"password\": \"{{password}}\",\n  \"confirm_password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/register"
+      }
+    },
+    {
+      "name": "2. Duplicate email registration",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 409 Conflict', function () { pm.response.to.have.status(409); });",
+              "const body = pm.response.json();",
+              "pm.test('Response identifies duplicate email', function () {",
+              "  pm.expect(body).to.have.property('message', 'An account with this email already exists.');",
+              "  pm.expect(body.errors).to.have.property('email', 'Email is already registered.');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Postman Test User\",\n  \"email\": \"{{email}}\",\n  \"phone\": \"+1 555 555 1234\",\n  \"district\": \"Mysuru\",\n  \"state\": \"Karnataka\",\n  \"password\": \"{{password}}\",\n  \"confirm_password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/register"
+      }
+    },
+    {
+      "name": "3. Successful login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Response contains user and both JWTs', function () {",
+              "  pm.expect(body).to.have.property('message', 'Login successful.');",
+              "  pm.expect(body.user).to.have.property('email', pm.collectionVariables.get('email'));",
+              "  pm.expect(body).to.have.property('access_token').that.is.a('string').and.not.empty;",
+              "  pm.expect(body).to.have.property('refresh_token').that.is.a('string').and.not.empty;",
+              "});",
+              "pm.collectionVariables.set('access_token', body.access_token);",
+              "pm.collectionVariables.set('refresh_token', body.refresh_token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "4. Invalid password login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 401 Unauthorized', function () { pm.response.to.have.status(401); });",
+              "pm.expect(pm.response.json()).to.eql({ message: 'Invalid email or password.' });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"WrongPassword1!\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/login"
+      }
+    },
+    {
+      "name": "5. Get profile using JWT",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Response contains the authenticated profile', function () {",
+              "  pm.expect(body).to.have.property('user');",
+              "  pm.expect(body.user).to.have.property('email', pm.collectionVariables.get('email'));",
+              "  pm.expect(body.user).to.have.property('full_name', 'Postman Test User');",
+              "  pm.expect(body.user).not.to.have.property('password_hash');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": "{{baseUrl}}/auth/profile"
+      }
+    },
+    {
+      "name": "6. Update profile",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Response contains updated profile', function () {",
+              "  pm.expect(body).to.have.property('user');",
+              "  pm.expect(body.user).to.have.property('full_name', 'Updated Postman User');",
+              "  pm.expect(body.user).to.have.property('email', pm.collectionVariables.get('email'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"Updated Postman User\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/profile"
+      }
+    },
+    {
+      "name": "7. Refresh token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Response contains rotated access and refresh JWTs', function () {",
+              "  pm.expect(body).to.have.property('message', 'Token refreshed.');",
+              "  pm.expect(body).to.have.property('access_token').that.is.a('string').and.not.empty;",
+              "  pm.expect(body).to.have.property('refresh_token').that.is.a('string').and.not.empty;",
+              "});",
+              "pm.collectionVariables.set('access_token', body.access_token);",
+              "pm.collectionVariables.set('refresh_token', body.refresh_token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{refresh_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/refresh"
+      }
+    },
+    {
+      "name": "8. Logout",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200 OK', function () { pm.response.to.have.status(200); });",
+              "pm.expect(pm.response.json()).to.eql({ message: 'Logout successful.' });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{access_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+        },
+        "url": "{{baseUrl}}/auth/logout"
+      }
+    }
+  ]
+}

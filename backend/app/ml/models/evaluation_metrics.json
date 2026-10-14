@@ -1,0 +1,154 @@
+{
+  "generated_at": "2026-10-13T16:40:40.166056+00:00",
+  "evaluation": "saved_model_on_held_out_test_split",
+  "model_path": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\ensemble_model.keras",
+  "test_path": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\dataset\\processed\\test.csv",
+  "target_column": "outbreak_risk",
+  "test_rows": 38,
+  "feature_count": 48,
+  "class_names": [
+    "High Risk",
+    "Low Risk",
+    "Moderate Risk"
+  ],
+  "metrics": {
+    "accuracy": 0.6578947368421053,
+    "precision_macro": 0.6294871794871795,
+    "recall_macro": 0.6001221001221001,
+    "f1_macro": 0.6093117408906883,
+    "confusion_matrix": [
+      [
+        3,
+        0,
+        4
+      ],
+      [
+        1,
+        15,
+        2
+      ],
+      [
+        1,
+        5,
+        7
+      ]
+    ],
+    "classification_report": {
+      "High Risk": {
+        "precision": 0.6,
+        "recall": 0.42857142857142855,
+        "f1-score": 0.5,
+        "support": 7.0
+      },
+      "Low Risk": {
+        "precision": 0.75,
+        "recall": 0.8333333333333334,
+        "f1-score": 0.7894736842105263,
+        "support": 18.0
+      },
+      "Moderate Risk": {
+        "precision": 0.5384615384615384,
+        "recall": 0.5384615384615384,
+        "f1-score": 0.5384615384615384,
+        "support": 13.0
+      },
+      "accuracy": 0.6578947368421053,
+      "macro avg": {
+        "precision": 0.6294871794871795,
+        "recall": 0.6001221001221001,
+        "f1-score": 0.6093117408906883,
+        "support": 38.0
+      },
+      "weighted avg": {
+        "precision": 0.65,
+        "recall": 0.6578947368421053,
+        "f1-score": 0.6502770083102493,
+        "support": 38.0
+      }
+    },
+    "roc_auc_ovr_macro": 0.8797623642784934
+  },
+  "preprocessing_validation": {
+    "test_features_numeric_and_finite": true,
+    "feature_order_matches_model": true,
+    "scaler_type": "StandardScaler",
+    "scaler_features": 47,
+    "scaler_columns": [
+      "average_temperature_c",
+      "average_relative_humidity_pct",
+      "total_rainfall_mm",
+      "average_wind_speed_m_s",
+      "average_surface_pressure_kpa",
+      "average_solar_radiation_mj_m2_day",
+      "temperature_humidity_interaction",
+      "state_ut_Andaman and Nicobar Islands",
+      "state_ut_Andhra Pradesh",
+      "state_ut_Arunachal Pradesh",
+      "state_ut_Assam",
+      "state_ut_Bihar",
+      "state_ut_Chandigarh",
+      "state_ut_Chhattisgarh",
+      "state_ut_Dadra and Nagar Haveli and Daman and Diu",
+      "state_ut_Delhi",
+      "state_ut_Goa",
+      "state_ut_Gujarat",
+      "state_ut_Haryana",
+      "state_ut_Jammu and Kashmir",
+      "state_ut_Jharkhand",
+      "state_ut_Karnataka",
+      "state_ut_Kerala",
+      "state_ut_Lakshadweep",
+      "state_ut_Maharashtra",
+      "state_ut_Manipur",
+      "state_ut_Meghalaya",
+      "state_ut_Nagaland",
+      "state_ut_Odisha",
+      "state_ut_Puducherry",
+      "state_ut_Punjab",
+      "state_ut_Rajasthan",
+      "state_ut_Sikkim",
+      "state_ut_Tamil Nadu",
+      "state_ut_Telangana",
+      "state_ut_Tripura",
+      "state_ut_Uttar Pradesh",
+      "state_ut_Uttarakhand",
+      "state_ut_West Bengal",
+      "season_Annual",
+      "rainfall_category_High",
+      "rainfall_category_Low",
+      "rainfall_category_Moderate",
+      "humidity_category_High",
+      "humidity_category_Moderate",
+      "temperature_category_Cool",
+      "temperature_category_Moderate"
+    ],
+    "scaler_fit_on_training_rows_only": true,
+    "test_values_rescaled": false,
+    "label_encoder_type": "LabelEncoder",
+    "encoder_classes_match_model_outputs": true,
+    "target_values_valid": true
+  },
+  "roc_curve_available": true,
+  "reproducibility": {
+    "seed": 42,
+    "inference_repeatability_verified": true,
+    "probabilities_sha256": "65137c7209b0ba7abe551779a6c3ee6d76fd31d8c53d26937ddd08cd92639639",
+    "test_csv_sha256": "480fbbaeb6807ad99443726b8027033b0bd17c7b1bcff3f05349140de9b4f4c4",
+    "model_sha256": "7ce7db17649c59f1488daa11fd6a5badcd12665e377026ea266fc851a71f8e39",
+    "scaler_sha256": "50f5da739636243b02413d25806fb2084dd007debe5fa171dcfec22a038c1c48",
+    "label_encoder_sha256": "ac6fc3b4cad882105240e1b72e68d7b7d20051935b0797f8a8037f904656fe38"
+  },
+  "limitations": [
+    "The held-out split has only 38 annual State/UT rows.",
+    "The random stratified split is not a future-year or external validation.",
+    "Risk labels are deterministic thresholds on annual confirmed cases.",
+    "The 2026 climate observations are year-to-date and not full-year data.",
+    "Predicted probabilities are not calibrated and must not guide clinical or public-health decisions."
+  ],
+  "artifacts": {
+    "metrics_json": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\evaluation_metrics.json",
+    "confusion_matrix_png": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\confusion_matrix.png",
+    "roc_curve_png": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\roc_curve.png",
+    "evaluation_report_html": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\evaluation_report.html"
+  }
+}

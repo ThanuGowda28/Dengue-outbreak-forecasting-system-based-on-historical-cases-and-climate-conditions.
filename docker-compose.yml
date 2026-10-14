@@ -1,0 +1,69 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-dengue_forecasting}
+      MYSQL_USER: ${DB_USER:-dengue_app}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks: [dengue-internal]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      APP_ENV: production
+      ML_MODEL_DIR: /app/backend/app/ml/models
+      ML_PROCESSED_DIR: /app/backend/app/ml/dataset/processed
+      LOG_DIR: /app/backend/logs
+      UPLOAD_FOLDER: /app/backend/instance/uploads
+    volumes:
+      - upload_data:/app/backend/instance/uploads
+      - log_data:/app/backend/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks: [dengue-internal]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 90s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [dengue-internal, dengue-edge]
+
+volumes:
+  mysql_data:
+  upload_data:
+  log_data:
+
+networks:
+  dengue-internal:
+    internal: true
+  dengue-edge:

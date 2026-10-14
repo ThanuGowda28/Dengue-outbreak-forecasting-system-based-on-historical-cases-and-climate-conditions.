@@ -1,0 +1,864 @@
+{
+  "generated_at": "2026-10-02T10:49:59.353725+00:00",
+  "dataset_summary": {
+    "train_path": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\dataset\\processed\\train.csv",
+    "test_path": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\dataset\\processed\\test.csv",
+    "training_rows": 152,
+    "test_rows": 38,
+    "feature_count": 48,
+    "feature_columns": [
+      "year",
+      "average_temperature_c",
+      "average_relative_humidity_pct",
+      "total_rainfall_mm",
+      "average_wind_speed_m_s",
+      "average_surface_pressure_kpa",
+      "average_solar_radiation_mj_m2_day",
+      "temperature_humidity_interaction",
+      "state_ut_Andaman and Nicobar Islands",
+      "state_ut_Andhra Pradesh",
+      "state_ut_Arunachal Pradesh",
+      "state_ut_Assam",
+      "state_ut_Bihar",
+      "state_ut_Chandigarh",
+      "state_ut_Chhattisgarh",
+      "state_ut_Dadra and Nagar Haveli and Daman and Diu",
+      "state_ut_Delhi",
+      "state_ut_Goa",
+      "state_ut_Gujarat",
+      "state_ut_Haryana",
+      "state_ut_Jammu and Kashmir",
+      "state_ut_Jharkhand",
+      "state_ut_Karnataka",
+      "state_ut_Kerala",
+      "state_ut_Lakshadweep",
+      "state_ut_Maharashtra",
+      "state_ut_Manipur",
+      "state_ut_Meghalaya",
+      "state_ut_Nagaland",
+      "state_ut_Odisha",
+      "state_ut_Puducherry",
+      "state_ut_Punjab",
+      "state_ut_Rajasthan",
+      "state_ut_Sikkim",
+      "state_ut_Tamil Nadu",
+      "state_ut_Telangana",
+      "state_ut_Tripura",
+      "state_ut_Uttar Pradesh",
+      "state_ut_Uttarakhand",
+      "state_ut_West Bengal",
+      "season_Annual",
+      "rainfall_category_High",
+      "rainfall_category_Low",
+      "rainfall_category_Moderate",
+      "humidity_category_High",
+      "humidity_category_Moderate",
+      "temperature_category_Cool",
+      "temperature_category_Moderate"
+    ],
+    "target_column": "outbreak_risk",
+    "target_classes": [
+      "High Risk",
+      "Low Risk",
+      "Moderate Risk"
+    ],
+    "training_class_distribution": {
+      "High Risk": 28,
+      "Low Risk": 70,
+      "Moderate Risk": 54
+    },
+    "test_class_distribution": {
+      "High Risk": 7,
+      "Low Risk": 18,
+      "Moderate Risk": 13
+    },
+    "scaler_loaded_from": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\dataset\\processed\\scaler.pkl",
+    "scaler_input_feature_count": 47,
+    "note": "CSV features were preprocessed and scaled by the existing pipeline; values were not scaled a second time."
+  },
+  "architectures": {
+    "ANN1": "Dense(128, ReLU) -> Dropout(0.30) -> Dense(64, ReLU) -> Dropout(0.20) -> Dense(softmax)",
+    "ANN2": "Dense(256, ReLU) -> BatchNormalization -> Dropout(0.40) -> Dense(128, ReLU) -> Dropout(0.30) -> Dense(softmax)",
+    "ANN3": "Dense(64, ReLU) -> Dense(64, ReLU) -> Dropout(0.25) -> Dense(32, ReLU) -> Dense(softmax)",
+    "Ensemble": "Arithmetic mean of ANN1, ANN2, ANN3 softmax probabilities",
+    "model_summaries": {
+      "ANN1": "Model: \"ann1\"\n\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513\n\u2503 Layer (type)              \u2503 Output Shape        \u2503    Param # \u2503\n\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2529\n\u2502 features (InputLayer)     \u2502 (None, 48)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_128 (Dense)         \u2502 (None, 128)         \u2502      6,272 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_030 (Dropout)     \u2502 (None, 128)         \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_64 (Dense)          \u2502 (None, 64)          \u2502      8,256 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_020 (Dropout)     \u2502 (None, 64)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 class_probabilities       \u2502 (None, 3)           \u2502        195 \u2502\n\u2502 (Dense)                   \u2502                     \u2502            \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n Total params: 14,723 (57.51 KB)\n Trainable params: 14,723 (57.51 KB)\n Non-trainable params: 0 (0.00 B)\n",
+      "ANN2": "Model: \"ann2\"\n\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513\n\u2503 Layer (type)              \u2503 Output Shape        \u2503    Param # \u2503\n\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2529\n\u2502 features (InputLayer)     \u2502 (None, 48)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_256 (Dense)         \u2502 (None, 256)         \u2502     12,544 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 batch_normalization       \u2502 (None, 256)         \u2502      1,024 \u2502\n\u2502 (BatchNormalization)      \u2502                     \u2502            \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_040 (Dropout)     \u2502 (None, 256)         \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_128 (Dense)         \u2502 (None, 128)         \u2502     32,896 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_030 (Dropout)     \u2502 (None, 128)         \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 class_probabilities       \u2502 (None, 3)           \u2502        387 \u2502\n\u2502 (Dense)                   \u2502                     \u2502            \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n Total params: 46,851 (183.01 KB)\n Trainable params: 46,339 (181.01 KB)\n Non-trainable params: 512 (2.00 KB)\n",
+      "ANN3": "Model: \"ann3\"\n\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513\n\u2503 Layer (type)              \u2503 Output Shape        \u2503    Param # \u2503\n\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2529\n\u2502 features (InputLayer)     \u2502 (None, 48)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_64_a (Dense)        \u2502 (None, 64)          \u2502      3,136 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_64_b (Dense)        \u2502 (None, 64)          \u2502      4,160 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_025 (Dropout)     \u2502 (None, 64)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_32 (Dense)          \u2502 (None, 32)          \u2502      2,080 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 class_probabilities       \u2502 (None, 3)           \u2502         99 \u2502\n\u2502 (Dense)                   \u2502                     \u2502            \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n Total params: 9,475 (37.01 KB)\n Trainable params: 9,475 (37.01 KB)\n Non-trainable params: 0 (0.00 B)\n"
+    }
+  },
+  "hyperparameters": {
+    "max_epochs": 200,
+    "batch_size": 12,
+    "validation_split": 0.1974,
+    "validation_rows": 30,
+    "early_stopping_patience": 18,
+    "reduce_lr_patience": 7,
+    "optimizer": "Adam",
+    "loss": "categorical_crossentropy",
+    "seed": 42
+  },
+  "training_time_seconds": {
+    "ANN1": 75.933,
+    "ANN2": 60.153,
+    "ANN3": 15.824
+  },
+  "metrics": {
+    "ANN1": {
+      "accuracy": 0.47368421052631576,
+      "precision_macro": 0.15789473684210525,
+      "recall_macro": 0.3333333333333333,
+      "f1_macro": 0.2142857142857143,
+      "confusion_matrix": [
+        [
+          0,
+          7,
+          0
+        ],
+        [
+          0,
+          18,
+          0
+        ],
+        [
+          0,
+          13,
+          0
+        ]
+      ],
+      "classification_report": {
+        "High Risk": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 7.0
+        },
+        "Low Risk": {
+          "precision": 0.47368421052631576,
+          "recall": 1.0,
+          "f1-score": 0.6428571428571429,
+          "support": 18.0
+        },
+        "Moderate Risk": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 13.0
+        },
+        "accuracy": 0.47368421052631576,
+        "macro avg": {
+          "precision": 0.15789473684210525,
+          "recall": 0.3333333333333333,
+          "f1-score": 0.2142857142857143,
+          "support": 38.0
+        },
+        "weighted avg": {
+          "precision": 0.22437673130193903,
+          "recall": 0.47368421052631576,
+          "f1-score": 0.3045112781954888,
+          "support": 38.0
+        }
+      },
+      "roc_auc_ovr_macro": 0.5
+    },
+    "ANN2": {
+      "accuracy": 0.7368421052631579,
+      "precision_macro": 0.6988795518207284,
+      "recall_macro": 0.6990231990231989,
+      "f1_macro": 0.6984126984126983,
+      "confusion_matrix": [
+        [
+          4,
+          0,
+          3
+        ],
+        [
+          1,
+          15,
+          2
+        ],
+        [
+          2,
+          2,
+          9
+        ]
+      ],
+      "classification_report": {
+        "High Risk": {
+          "precision": 0.5714285714285714,
+          "recall": 0.5714285714285714,
+          "f1-score": 0.5714285714285714,
+          "support": 7.0
+        },
+        "Low Risk": {
+          "precision": 0.8823529411764706,
+          "recall": 0.8333333333333334,
+          "f1-score": 0.8571428571428571,
+          "support": 18.0
+        },
+        "Moderate Risk": {
+          "precision": 0.6428571428571429,
+          "recall": 0.6923076923076923,
+          "f1-score": 0.6666666666666666,
+          "support": 13.0
+        },
+        "accuracy": 0.7368421052631579,
+        "macro avg": {
+          "precision": 0.6988795518207284,
+          "recall": 0.6990231990231989,
+          "f1-score": 0.6984126984126983,
+          "support": 38.0
+        },
+        "weighted avg": {
+          "precision": 0.7431446262715613,
+          "recall": 0.7368421052631579,
+          "f1-score": 0.7393483709273183,
+          "support": 38.0
+        }
+      },
+      "roc_auc_ovr_macro": 0.8500970236454107
+    },
+    "ANN3": {
+      "accuracy": 0.47368421052631576,
+      "precision_macro": 0.15789473684210525,
+      "recall_macro": 0.3333333333333333,
+      "f1_macro": 0.2142857142857143,
+      "confusion_matrix": [
+        [
+          0,
+          7,
+          0
+        ],
+        [
+          0,
+          18,
+          0
+        ],
+        [
+          0,
+          13,
+          0
+        ]
+      ],
+      "classification_report": {
+        "High Risk": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 7.0
+        },
+        "Low Risk": {
+          "precision": 0.47368421052631576,
+          "recall": 1.0,
+          "f1-score": 0.6428571428571429,
+          "support": 18.0
+        },
+        "Moderate Risk": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 13.0
+        },
+        "accuracy": 0.47368421052631576,
+        "macro avg": {
+          "precision": 0.15789473684210525,
+          "recall": 0.3333333333333333,
+          "f1-score": 0.2142857142857143,
+          "support": 38.0
+        },
+        "weighted avg": {
+          "precision": 0.22437673130193903,
+          "recall": 0.47368421052631576,
+          "f1-score": 0.3045112781954888,
+          "support": 38.0
+        }
+      },
+      "roc_auc_ovr_macro": 0.7635657174366853
+    },
+    "Ensemble": {
+      "accuracy": 0.6578947368421053,
+      "precision_macro": 0.6294871794871795,
+      "recall_macro": 0.6001221001221001,
+      "f1_macro": 0.6093117408906883,
+      "confusion_matrix": [
+        [
+          3,
+          0,
+          4
+        ],
+        [
+          1,
+          15,
+          2
+        ],
+        [
+          1,
+          5,
+          7
+        ]
+      ],
+      "classification_report": {
+        "High Risk": {
+          "precision": 0.6,
+          "recall": 0.42857142857142855,
+          "f1-score": 0.5,
+          "support": 7.0
+        },
+        "Low Risk": {
+          "precision": 0.75,
+          "recall": 0.8333333333333334,
+          "f1-score": 0.7894736842105263,
+          "support": 18.0
+        },
+        "Moderate Risk": {
+          "precision": 0.5384615384615384,
+          "recall": 0.5384615384615384,
+          "f1-score": 0.5384615384615384,
+          "support": 13.0
+        },
+        "accuracy": 0.6578947368421053,
+        "macro avg": {
+          "precision": 0.6294871794871795,
+          "recall": 0.6001221001221001,
+          "f1-score": 0.6093117408906883,
+          "support": 38.0
+        },
+        "weighted avg": {
+          "precision": 0.65,
+          "recall": 0.6578947368421053,
+          "f1-score": 0.6502770083102493,
+          "support": 38.0
+        }
+      },
+      "roc_auc_ovr_macro": 0.8797623642784934
+    }
+  },
+  "model_comparison": {
+    "ANN1": {
+      "accuracy": 0.47368421052631576,
+      "precision_macro": 0.15789473684210525,
+      "recall_macro": 0.3333333333333333,
+      "f1_macro": 0.2142857142857143,
+      "roc_auc_ovr_macro": 0.5
+    },
+    "ANN2": {
+      "accuracy": 0.7368421052631579,
+      "precision_macro": 0.6988795518207284,
+      "recall_macro": 0.6990231990231989,
+      "f1_macro": 0.6984126984126983,
+      "roc_auc_ovr_macro": 0.8500970236454107
+    },
+    "ANN3": {
+      "accuracy": 0.47368421052631576,
+      "precision_macro": 0.15789473684210525,
+      "recall_macro": 0.3333333333333333,
+      "f1_macro": 0.2142857142857143,
+      "roc_auc_ovr_macro": 0.7635657174366853
+    },
+    "Ensemble": {
+      "accuracy": 0.6578947368421053,
+      "precision_macro": 0.6294871794871795,
+      "recall_macro": 0.6001221001221001,
+      "f1_macro": 0.6093117408906883,
+      "roc_auc_ovr_macro": 0.8797623642784934
+    }
+  },
+  "classification_reports": {
+    "ANN1": {
+      "High Risk": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 7.0
+      },
+      "Low Risk": {
+        "precision": 0.47368421052631576,
+        "recall": 1.0,
+        "f1-score": 0.6428571428571429,
+        "support": 18.0
+      },
+      "Moderate Risk": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 13.0
+      },
+      "accuracy": 0.47368421052631576,
+      "macro avg": {
+        "precision": 0.15789473684210525,
+        "recall": 0.3333333333333333,
+        "f1-score": 0.2142857142857143,
+        "support": 38.0
+      },
+      "weighted avg": {
+        "precision": 0.22437673130193903,
+        "recall": 0.47368421052631576,
+        "f1-score": 0.3045112781954888,
+        "support": 38.0
+      }
+    },
+    "ANN2": {
+      "High Risk": {
+        "precision": 0.5714285714285714,
+        "recall": 0.5714285714285714,
+        "f1-score": 0.5714285714285714,
+        "support": 7.0
+      },
+      "Low Risk": {
+        "precision": 0.8823529411764706,
+        "recall": 0.8333333333333334,
+        "f1-score": 0.8571428571428571,
+        "support": 18.0
+      },
+      "Moderate Risk": {
+        "precision": 0.6428571428571429,
+        "recall": 0.6923076923076923,
+        "f1-score": 0.6666666666666666,
+        "support": 13.0
+      },
+      "accuracy": 0.7368421052631579,
+      "macro avg": {
+        "precision": 0.6988795518207284,
+        "recall": 0.6990231990231989,
+        "f1-score": 0.6984126984126983,
+        "support": 38.0
+      },
+      "weighted avg": {
+        "precision": 0.7431446262715613,
+        "recall": 0.7368421052631579,
+        "f1-score": 0.7393483709273183,
+        "support": 38.0
+      }
+    },
+    "ANN3": {
+      "High Risk": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 7.0
+      },
+      "Low Risk": {
+        "precision": 0.47368421052631576,
+        "recall": 1.0,
+        "f1-score": 0.6428571428571429,
+        "support": 18.0
+      },
+      "Moderate Risk": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 13.0
+      },
+      "accuracy": 0.47368421052631576,
+      "macro avg": {
+        "precision": 0.15789473684210525,
+        "recall": 0.3333333333333333,
+        "f1-score": 0.2142857142857143,
+        "support": 38.0
+      },
+      "weighted avg": {
+        "precision": 0.22437673130193903,
+        "recall": 0.47368421052631576,
+        "f1-score": 0.3045112781954888,
+        "support": 38.0
+      }
+    },
+    "Ensemble": {
+      "High Risk": {
+        "precision": 0.6,
+        "recall": 0.42857142857142855,
+        "f1-score": 0.5,
+        "support": 7.0
+      },
+      "Low Risk": {
+        "precision": 0.75,
+        "recall": 0.8333333333333334,
+        "f1-score": 0.7894736842105263,
+        "support": 18.0
+      },
+      "Moderate Risk": {
+        "precision": 0.5384615384615384,
+        "recall": 0.5384615384615384,
+        "f1-score": 0.5384615384615384,
+        "support": 13.0
+      },
+      "accuracy": 0.6578947368421053,
+      "macro avg": {
+        "precision": 0.6294871794871795,
+        "recall": 0.6001221001221001,
+        "f1-score": 0.6093117408906883,
+        "support": 38.0
+      },
+      "weighted avg": {
+        "precision": 0.65,
+        "recall": 0.6578947368421053,
+        "f1-score": 0.6502770083102493,
+        "support": 38.0
+      }
+    }
+  },
+  "ensemble_accuracy": 0.6578947368421053,
+  "feature_importance": [
+    {
+      "feature": "state_ut_West Bengal",
+      "importance": 0.03508771929824569,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "state_ut_Chandigarh",
+      "importance": 0.026315789473684292,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Delhi",
+      "importance": 0.026315789473684292,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Lakshadweep",
+      "importance": 0.026315789473684292,
+      "std": 0.0
+    },
+    {
+      "feature": "average_solar_radiation_mj_m2_day",
+      "importance": 0.01754385964912286,
+      "std": 0.01240538212607982
+    },
+    {
+      "feature": "state_ut_Maharashtra",
+      "importance": 0.01754385964912286,
+      "std": 0.01240538212607982
+    },
+    {
+      "feature": "humidity_category_Moderate",
+      "importance": 0.01754385964912286,
+      "std": 0.01240538212607982
+    },
+    {
+      "feature": "average_relative_humidity_pct",
+      "importance": 0.00877192982456143,
+      "std": 0.01240538212607982
+    },
+    {
+      "feature": "state_ut_Andhra Pradesh",
+      "importance": 0.00877192982456143,
+      "std": 0.01240538212607982
+    },
+    {
+      "feature": "state_ut_Manipur",
+      "importance": 0.00877192982456143,
+      "std": 0.01240538212607982
+    },
+    {
+      "feature": "state_ut_Odisha",
+      "importance": 0.00877192982456143,
+      "std": 0.01240538212607982
+    },
+    {
+      "feature": "year",
+      "importance": 3.700743415417188e-17,
+      "std": 0.021486752129677024
+    },
+    {
+      "feature": "state_ut_Telangana",
+      "importance": 3.700743415417188e-17,
+      "std": 0.021486752129677024
+    },
+    {
+      "feature": "total_rainfall_mm",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Arunachal Pradesh",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Assam",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Bihar",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Dadra and Nagar Haveli and Daman and Diu",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Goa",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Haryana",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Jharkhand",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Meghalaya",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Nagaland",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Puducherry",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Punjab",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Rajasthan",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Tamil Nadu",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Uttar Pradesh",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "season_Annual",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "rainfall_category_Low",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "humidity_category_High",
+      "importance": 0.0,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Chhattisgarh",
+      "importance": -0.008771929824561394,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "state_ut_Karnataka",
+      "importance": -0.008771929824561394,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "state_ut_Sikkim",
+      "importance": -0.008771929824561394,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "average_surface_pressure_kpa",
+      "importance": -0.01754385964912279,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "temperature_humidity_interaction",
+      "importance": -0.01754385964912279,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "state_ut_Uttarakhand",
+      "importance": -0.01754385964912279,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "rainfall_category_Moderate",
+      "importance": -0.01754385964912279,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "temperature_category_Moderate",
+      "importance": -0.01754385964912279,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "average_wind_speed_m_s",
+      "importance": -0.02631578947368418,
+      "std": 0.02148675212967698
+    },
+    {
+      "feature": "state_ut_Andaman and Nicobar Islands",
+      "importance": -0.02631578947368418,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Gujarat",
+      "importance": -0.02631578947368418,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Kerala",
+      "importance": -0.02631578947368418,
+      "std": 0.0
+    },
+    {
+      "feature": "temperature_category_Cool",
+      "importance": -0.02631578947368418,
+      "std": 0.0
+    },
+    {
+      "feature": "state_ut_Tripura",
+      "importance": -0.03508771929824558,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "rainfall_category_High",
+      "importance": -0.03508771929824558,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "average_temperature_c",
+      "importance": -0.04385964912280697,
+      "std": 0.012405382126079766
+    },
+    {
+      "feature": "state_ut_Jammu and Kashmir",
+      "importance": -0.05263157894736836,
+      "std": 0.02148675212967698
+    }
+  ],
+  "visualizations": {
+    "accuracy_curve": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\accuracy_curve.png",
+    "loss_curve": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\loss_curve.png",
+    "confusion_matrix": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\confusion_matrix.png",
+    "class_distribution": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\class_distribution.png",
+    "feature_importance": "C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\models\\feature_importance.png"
+  },
+  "model_trained": true,
+  "flask_integrated": false,
+  "sample_predictions": [
+    {
+      "test_row_index": 2,
+      "actual_class": "High Risk",
+      "predicted_class": "Moderate Risk",
+      "confidence": 0.5119725267092387,
+      "probabilities": {
+        "High Risk": 0.14699993565833816,
+        "Low Risk": 0.3410275876522064,
+        "Moderate Risk": 0.5119725267092387
+      }
+    },
+    {
+      "test_row_index": 3,
+      "actual_class": "Low Risk",
+      "predicted_class": "Low Risk",
+      "confidence": 0.49026767412821454,
+      "probabilities": {
+        "High Risk": 0.13242239776688317,
+        "Low Risk": 0.49026767412821454,
+        "Moderate Risk": 0.3773099482059479
+      }
+    },
+    {
+      "test_row_index": 7,
+      "actual_class": "Low Risk",
+      "predicted_class": "Low Risk",
+      "confidence": 0.6528323590755463,
+      "probabilities": {
+        "High Risk": 0.12113222145277784,
+        "Low Risk": 0.6528323590755463,
+        "Moderate Risk": 0.2260354440465259
+      }
+    },
+    {
+      "test_row_index": 14,
+      "actual_class": "Low Risk",
+      "predicted_class": "Low Risk",
+      "confidence": 0.6612152953942617,
+      "probabilities": {
+        "High Risk": 0.11731677952745183,
+        "Low Risk": 0.6612152953942617,
+        "Moderate Risk": 0.22146793553838506
+      }
+    },
+    {
+      "test_row_index": 20,
+      "actual_class": "Low Risk",
+      "predicted_class": "Moderate Risk",
+      "confidence": 0.5406564573446909,
+      "probabilities": {
+        "High Risk": 0.12442341928059857,
+        "Low Risk": 0.33492013315359753,
+        "Moderate Risk": 0.5406564573446909
+      }
+    },
+    {
+      "test_row_index": 23,
+      "actual_class": "Low Risk",
+      "predicted_class": "Low Risk",
+      "confidence": 0.641711543003718,
+      "probabilities": {
+        "High Risk": 0.12162605017268409,
+        "Low Risk": 0.641711543003718,
+        "Moderate Risk": 0.23666243006785712
+      }
+    },
+    {
+      "test_row_index": 25,
+      "actual_class": "High Risk",
+      "predicted_class": "Moderate Risk",
+      "confidence": 0.3688631554444631,
+      "probabilities": {
+        "High Risk": 0.3464674800634384,
+        "Low Risk": 0.28466939739882946,
+        "Moderate Risk": 0.3688631554444631
+      }
+    },
+    {
+      "test_row_index": 29,
+      "actual_class": "Moderate Risk",
+      "predicted_class": "High Risk",
+      "confidence": 0.448840210835139,
+      "probabilities": {
+        "High Risk": 0.448840210835139,
+        "Low Risk": 0.3043121672041404,
+        "Moderate Risk": 0.24684761464595795
+      }
+    },
+    {
+      "test_row_index": 32,
+      "actual_class": "Moderate Risk",
+      "predicted_class": "Moderate Risk",
+      "confidence": 0.559510330359141,
+      "probabilities": {
+        "High Risk": 0.12262835326449324,
+        "Low Risk": 0.3178613090713043,
+        "Moderate Risk": 0.559510330359141
+      }
+    },
+    {
+      "test_row_index": 37,
+      "actual_class": "High Risk",
+      "predicted_class": "High Risk",
+      "confidence": 0.436015119155248,
+      "probabilities": {
+        "High Risk": 0.436015119155248,
+        "Low Risk": 0.30215364263858646,
+        "Moderate Risk": 0.26183121899763745
+      }
+    }
+  ]
+}

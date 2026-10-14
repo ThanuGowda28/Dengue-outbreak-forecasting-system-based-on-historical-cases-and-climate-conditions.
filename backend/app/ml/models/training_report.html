@@ -1,0 +1,233 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dengue ANN Ensemble Training Report</title><style>body{font:15px/1.55 Arial,sans-serif;max-width:1200px;margin:2rem auto;padding:0 1rem;color:#263238}h1,h2{color:#00695c}table{border-collapse:collapse;width:100%;margin:1rem 0}td,th{border:1px solid #d8e0e3;padding:.55rem;text-align:left}th{background:#e8f5f3}.graphs{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:1rem}img{max-width:100%;height:auto;border:1px solid #ddd}figure{margin:0}pre{white-space:pre-wrap;background:#f4f6f8;padding:1rem;overflow-wrap:anywhere}</style></head><body><h1>Dengue ANN Ensemble Training Report</h1><p>Generated UTC: 2026-10-02T10:49:59.353725+00:00</p><h2>Dataset summary</h2><pre>{
+  &quot;train_path&quot;: &quot;C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\dataset\\processed\\train.csv&quot;,
+  &quot;test_path&quot;: &quot;C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\dataset\\processed\\test.csv&quot;,
+  &quot;training_rows&quot;: 152,
+  &quot;test_rows&quot;: 38,
+  &quot;feature_count&quot;: 48,
+  &quot;feature_columns&quot;: [
+    &quot;year&quot;,
+    &quot;average_temperature_c&quot;,
+    &quot;average_relative_humidity_pct&quot;,
+    &quot;total_rainfall_mm&quot;,
+    &quot;average_wind_speed_m_s&quot;,
+    &quot;average_surface_pressure_kpa&quot;,
+    &quot;average_solar_radiation_mj_m2_day&quot;,
+    &quot;temperature_humidity_interaction&quot;,
+    &quot;state_ut_Andaman and Nicobar Islands&quot;,
+    &quot;state_ut_Andhra Pradesh&quot;,
+    &quot;state_ut_Arunachal Pradesh&quot;,
+    &quot;state_ut_Assam&quot;,
+    &quot;state_ut_Bihar&quot;,
+    &quot;state_ut_Chandigarh&quot;,
+    &quot;state_ut_Chhattisgarh&quot;,
+    &quot;state_ut_Dadra and Nagar Haveli and Daman and Diu&quot;,
+    &quot;state_ut_Delhi&quot;,
+    &quot;state_ut_Goa&quot;,
+    &quot;state_ut_Gujarat&quot;,
+    &quot;state_ut_Haryana&quot;,
+    &quot;state_ut_Jammu and Kashmir&quot;,
+    &quot;state_ut_Jharkhand&quot;,
+    &quot;state_ut_Karnataka&quot;,
+    &quot;state_ut_Kerala&quot;,
+    &quot;state_ut_Lakshadweep&quot;,
+    &quot;state_ut_Maharashtra&quot;,
+    &quot;state_ut_Manipur&quot;,
+    &quot;state_ut_Meghalaya&quot;,
+    &quot;state_ut_Nagaland&quot;,
+    &quot;state_ut_Odisha&quot;,
+    &quot;state_ut_Puducherry&quot;,
+    &quot;state_ut_Punjab&quot;,
+    &quot;state_ut_Rajasthan&quot;,
+    &quot;state_ut_Sikkim&quot;,
+    &quot;state_ut_Tamil Nadu&quot;,
+    &quot;state_ut_Telangana&quot;,
+    &quot;state_ut_Tripura&quot;,
+    &quot;state_ut_Uttar Pradesh&quot;,
+    &quot;state_ut_Uttarakhand&quot;,
+    &quot;state_ut_West Bengal&quot;,
+    &quot;season_Annual&quot;,
+    &quot;rainfall_category_High&quot;,
+    &quot;rainfall_category_Low&quot;,
+    &quot;rainfall_category_Moderate&quot;,
+    &quot;humidity_category_High&quot;,
+    &quot;humidity_category_Moderate&quot;,
+    &quot;temperature_category_Cool&quot;,
+    &quot;temperature_category_Moderate&quot;
+  ],
+  &quot;target_column&quot;: &quot;outbreak_risk&quot;,
+  &quot;target_classes&quot;: [
+    &quot;High Risk&quot;,
+    &quot;Low Risk&quot;,
+    &quot;Moderate Risk&quot;
+  ],
+  &quot;training_class_distribution&quot;: {
+    &quot;High Risk&quot;: 28,
+    &quot;Low Risk&quot;: 70,
+    &quot;Moderate Risk&quot;: 54
+  },
+  &quot;test_class_distribution&quot;: {
+    &quot;High Risk&quot;: 7,
+    &quot;Low Risk&quot;: 18,
+    &quot;Moderate Risk&quot;: 13
+  },
+  &quot;scaler_loaded_from&quot;: &quot;C:\\Users\\User\\OneDrive\\Desktop\\thanugowda\\main projrct\\7th sem project\\dengue\\backend\\app\\ml\\dataset\\processed\\scaler.pkl&quot;,
+  &quot;scaler_input_feature_count&quot;: 47,
+  &quot;note&quot;: &quot;CSV features were preprocessed and scaled by the existing pipeline; values were not scaled a second time.&quot;
+}</pre><h2>Architecture</h2><pre>{
+  &quot;ANN1&quot;: &quot;Dense(128, ReLU) -&gt; Dropout(0.30) -&gt; Dense(64, ReLU) -&gt; Dropout(0.20) -&gt; Dense(softmax)&quot;,
+  &quot;ANN2&quot;: &quot;Dense(256, ReLU) -&gt; BatchNormalization -&gt; Dropout(0.40) -&gt; Dense(128, ReLU) -&gt; Dropout(0.30) -&gt; Dense(softmax)&quot;,
+  &quot;ANN3&quot;: &quot;Dense(64, ReLU) -&gt; Dense(64, ReLU) -&gt; Dropout(0.25) -&gt; Dense(32, ReLU) -&gt; Dense(softmax)&quot;,
+  &quot;Ensemble&quot;: &quot;Arithmetic mean of ANN1, ANN2, ANN3 softmax probabilities&quot;,
+  &quot;model_summaries&quot;: {
+    &quot;ANN1&quot;: &quot;Model: \&quot;ann1\&quot;\n\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513\n\u2503 Layer (type)              \u2503 Output Shape        \u2503    Param # \u2503\n\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2529\n\u2502 features (InputLayer)     \u2502 (None, 48)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_128 (Dense)         \u2502 (None, 128)         \u2502      6,272 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_030 (Dropout)     \u2502 (None, 128)         \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_64 (Dense)          \u2502 (None, 64)          \u2502      8,256 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_020 (Dropout)     \u2502 (None, 64)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 class_probabilities       \u2502 (None, 3)           \u2502        195 \u2502\n\u2502 (Dense)                   \u2502                     \u2502            \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n Total params: 14,723 (57.51 KB)\n Trainable params: 14,723 (57.51 KB)\n Non-trainable params: 0 (0.00 B)\n&quot;,
+    &quot;ANN2&quot;: &quot;Model: \&quot;ann2\&quot;\n\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513\n\u2503 Layer (type)              \u2503 Output Shape        \u2503    Param # \u2503\n\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2529\n\u2502 features (InputLayer)     \u2502 (None, 48)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_256 (Dense)         \u2502 (None, 256)         \u2502     12,544 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 batch_normalization       \u2502 (None, 256)         \u2502      1,024 \u2502\n\u2502 (BatchNormalization)      \u2502                     \u2502            \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_040 (Dropout)     \u2502 (None, 256)         \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_128 (Dense)         \u2502 (None, 128)         \u2502     32,896 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_030 (Dropout)     \u2502 (None, 128)         \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 class_probabilities       \u2502 (None, 3)           \u2502        387 \u2502\n\u2502 (Dense)                   \u2502                     \u2502            \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n Total params: 46,851 (183.01 KB)\n Trainable params: 46,339 (181.01 KB)\n Non-trainable params: 512 (2.00 KB)\n&quot;,
+    &quot;ANN3&quot;: &quot;Model: \&quot;ann3\&quot;\n\u250f\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2533\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2513\n\u2503 Layer (type)              \u2503 Output Shape        \u2503    Param # \u2503\n\u2521\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2547\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2529\n\u2502 features (InputLayer)     \u2502 (None, 48)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_64_a (Dense)        \u2502 (None, 64)          \u2502      3,136 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_64_b (Dense)        \u2502 (None, 64)          \u2502      4,160 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dropout_025 (Dropout)     \u2502 (None, 64)          \u2502          0 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 dense_32 (Dense)          \u2502 (None, 32)          \u2502      2,080 \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 class_probabilities       \u2502 (None, 3)           \u2502         99 \u2502\n\u2502 (Dense)                   \u2502                     \u2502            \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n Total params: 9,475 (37.01 KB)\n Trainable params: 9,475 (37.01 KB)\n Non-trainable params: 0 (0.00 B)\n&quot;
+  }
+}</pre><h2>Hyperparameters</h2><pre>{
+  &quot;max_epochs&quot;: 200,
+  &quot;batch_size&quot;: 12,
+  &quot;validation_split&quot;: 0.1974,
+  &quot;validation_rows&quot;: 30,
+  &quot;early_stopping_patience&quot;: 18,
+  &quot;reduce_lr_patience&quot;: 7,
+  &quot;optimizer&quot;: &quot;Adam&quot;,
+  &quot;loss&quot;: &quot;categorical_crossentropy&quot;,
+  &quot;seed&quot;: 42
+}</pre><h2>Training time (seconds)</h2><pre>{
+  &quot;ANN1&quot;: 75.933,
+  &quot;ANN2&quot;: 60.153,
+  &quot;ANN3&quot;: 15.824
+}</pre><h2>Model comparison</h2><table><thead><tr><th>Model</th><th>Accuracy</th><th>Precision (macro)</th><th>Recall (macro)</th><th>F1 (macro)</th></tr></thead><tbody><tr><th>ANN1</th><td>0.4737</td><td>0.1579</td><td>0.3333</td><td>0.2143</td></tr><tr><th>ANN2</th><td>0.7368</td><td>0.6989</td><td>0.6990</td><td>0.6984</td></tr><tr><th>ANN3</th><td>0.4737</td><td>0.1579</td><td>0.3333</td><td>0.2143</td></tr><tr><th>Ensemble</th><td>0.6579</td><td>0.6295</td><td>0.6001</td><td>0.6093</td></tr></tbody></table><h2>Final ensemble accuracy: 0.6579</h2><h2>Classification reports</h2><pre>{
+  &quot;ANN1&quot;: {
+    &quot;High Risk&quot;: {
+      &quot;precision&quot;: 0.0,
+      &quot;recall&quot;: 0.0,
+      &quot;f1-score&quot;: 0.0,
+      &quot;support&quot;: 7.0
+    },
+    &quot;Low Risk&quot;: {
+      &quot;precision&quot;: 0.47368421052631576,
+      &quot;recall&quot;: 1.0,
+      &quot;f1-score&quot;: 0.6428571428571429,
+      &quot;support&quot;: 18.0
+    },
+    &quot;Moderate Risk&quot;: {
+      &quot;precision&quot;: 0.0,
+      &quot;recall&quot;: 0.0,
+      &quot;f1-score&quot;: 0.0,
+      &quot;support&quot;: 13.0
+    },
+    &quot;accuracy&quot;: 0.47368421052631576,
+    &quot;macro avg&quot;: {
+      &quot;precision&quot;: 0.15789473684210525,
+      &quot;recall&quot;: 0.3333333333333333,
+      &quot;f1-score&quot;: 0.2142857142857143,
+      &quot;support&quot;: 38.0
+    },
+    &quot;weighted avg&quot;: {
+      &quot;precision&quot;: 0.22437673130193903,
+      &quot;recall&quot;: 0.47368421052631576,
+      &quot;f1-score&quot;: 0.3045112781954888,
+      &quot;support&quot;: 38.0
+    }
+  },
+  &quot;ANN2&quot;: {
+    &quot;High Risk&quot;: {
+      &quot;precision&quot;: 0.5714285714285714,
+      &quot;recall&quot;: 0.5714285714285714,
+      &quot;f1-score&quot;: 0.5714285714285714,
+      &quot;support&quot;: 7.0
+    },
+    &quot;Low Risk&quot;: {
+      &quot;precision&quot;: 0.8823529411764706,
+      &quot;recall&quot;: 0.8333333333333334,
+      &quot;f1-score&quot;: 0.8571428571428571,
+      &quot;support&quot;: 18.0
+    },
+    &quot;Moderate Risk&quot;: {
+      &quot;precision&quot;: 0.6428571428571429,
+      &quot;recall&quot;: 0.6923076923076923,
+      &quot;f1-score&quot;: 0.6666666666666666,
+      &quot;support&quot;: 13.0
+    },
+    &quot;accuracy&quot;: 0.7368421052631579,
+    &quot;macro avg&quot;: {
+      &quot;precision&quot;: 0.6988795518207284,
+      &quot;recall&quot;: 0.6990231990231989,
+      &quot;f1-score&quot;: 0.6984126984126983,
+      &quot;support&quot;: 38.0
+    },
+    &quot;weighted avg&quot;: {
+      &quot;precision&quot;: 0.7431446262715613,
+      &quot;recall&quot;: 0.7368421052631579,
+      &quot;f1-score&quot;: 0.7393483709273183,
+      &quot;support&quot;: 38.0
+    }
+  },
+  &quot;ANN3&quot;: {
+    &quot;High Risk&quot;: {
+      &quot;precision&quot;: 0.0,
+      &quot;recall&quot;: 0.0,
+      &quot;f1-score&quot;: 0.0,
+      &quot;support&quot;: 7.0
+    },
+    &quot;Low Risk&quot;: {
+      &quot;precision&quot;: 0.47368421052631576,
+      &quot;recall&quot;: 1.0,
+      &quot;f1-score&quot;: 0.6428571428571429,
+      &quot;support&quot;: 18.0
+    },
+    &quot;Moderate Risk&quot;: {
+      &quot;precision&quot;: 0.0,
+      &quot;recall&quot;: 0.0,
+      &quot;f1-score&quot;: 0.0,
+      &quot;support&quot;: 13.0
+    },
+    &quot;accuracy&quot;: 0.47368421052631576,
+    &quot;macro avg&quot;: {
+      &quot;precision&quot;: 0.15789473684210525,
+      &quot;recall&quot;: 0.3333333333333333,
+      &quot;f1-score&quot;: 0.2142857142857143,
+      &quot;support&quot;: 38.0
+    },
+    &quot;weighted avg&quot;: {
+      &quot;precision&quot;: 0.22437673130193903,
+      &quot;recall&quot;: 0.47368421052631576,
+      &quot;f1-score&quot;: 0.3045112781954888,
+      &quot;support&quot;: 38.0
+    }
+  },
+  &quot;Ensemble&quot;: {
+    &quot;High Risk&quot;: {
+      &quot;precision&quot;: 0.6,
+      &quot;recall&quot;: 0.42857142857142855,
+      &quot;f1-score&quot;: 0.5,
+      &quot;support&quot;: 7.0
+    },
+    &quot;Low Risk&quot;: {
+      &quot;precision&quot;: 0.75,
+      &quot;recall&quot;: 0.8333333333333334,
+      &quot;f1-score&quot;: 0.7894736842105263,
+      &quot;support&quot;: 18.0
+    },
+    &quot;Moderate Risk&quot;: {
+      &quot;precision&quot;: 0.5384615384615384,
+      &quot;recall&quot;: 0.5384615384615384,
+      &quot;f1-score&quot;: 0.5384615384615384,
+      &quot;support&quot;: 13.0
+    },
+    &quot;accuracy&quot;: 0.6578947368421053,
+    &quot;macro avg&quot;: {
+      &quot;precision&quot;: 0.6294871794871795,
+      &quot;recall&quot;: 0.6001221001221001,
+      &quot;f1-score&quot;: 0.6093117408906883,
+      &quot;support&quot;: 38.0
+    },
+    &quot;weighted avg&quot;: {
+      &quot;precision&quot;: 0.65,
+      &quot;recall&quot;: 0.6578947368421053,
+      &quot;f1-score&quot;: 0.6502770083102493,
+      &quot;support&quot;: 38.0
+    }
+  }
+}</pre><h2>Visualizations</h2><div class="graphs"><figure><img src="accuracy_curve.png" alt="accuracy curve"><figcaption>Accuracy Curve</figcaption></figure><figure><img src="loss_curve.png" alt="loss curve"><figcaption>Loss Curve</figcaption></figure><figure><img src="confusion_matrix.png" alt="confusion matrix"><figcaption>Confusion Matrix</figcaption></figure><figure><img src="class_distribution.png" alt="class distribution"><figcaption>Class Distribution</figcaption></figure><figure><img src="feature_importance.png" alt="feature importance"><figcaption>Feature Importance</figcaption></figure></div><!-- HELD-OUT EVALUATION START --><h2>Latest held-out test evaluation</h2><p><a href="evaluation_report.html">Open the test evaluation report</a>. It evaluates the saved ensemble without retraining.</p><!-- HELD-OUT EVALUATION END --></body></html>

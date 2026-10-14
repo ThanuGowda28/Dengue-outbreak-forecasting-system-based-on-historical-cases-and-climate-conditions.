@@ -1,0 +1,1 @@
+"""Backend-wide configuration resources."""

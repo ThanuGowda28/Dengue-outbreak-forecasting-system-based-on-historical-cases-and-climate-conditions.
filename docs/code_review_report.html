@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Code Review Report - Dengue Forecasting System</title>
+  <style>
+    body { background: #f4f7f8; color: #1b3037; font: 16px/1.6 system-ui, sans-serif; margin: 0; }
+    main { max-width: 1100px; margin: 36px auto; padding: 0 22px; }
+    header, section { background: #fff; border: 1px solid #dce6e8; border-radius: 14px; margin: 18px 0; padding: 22px 26px; }
+    h1 { color: #007f73; }
+    table { border-collapse: collapse; width: 100%; }
+    td, th { border-bottom: 1px solid #dce6e8; padding: 11px; text-align: left; vertical-align: top; }
+    th { background: #f5f8f9; }
+    .critical { color: #a31616; font-weight: 700; }
+    .high { color: #ae4e00; font-weight: 700; }
+    .medium { color: #806000; font-weight: 700; }
+    code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body><main>
+  <header>
+    <h1>Code Review and Current Status</h1>
+    <p>Scope: application routes, data/ML pipeline, model artifacts, persistence, frontend/admin surfaces, and deployment configuration. This report is not a penetration test or compliance certification. The original findings were rechecked on 2026-10-13; entries below reflect current status.</p>
+    <p>Two release-readiness defects found during local validation were corrected: Flask logging app-path handling, and an unterminated CSV export string in the prediction page. A missing-directory assumption in the system-health probe was also corrected. The tests/build now pass; these changes do not create model artifacts or add feature behavior.</p>
+  </header>
+  <section>
+    <h2>Prioritized findings</h2>
+    <table>
+      <thead><tr><th>#</th><th>Severity</th><th>Confidence</th><th>Finding</th><th>Evidence / impact</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td class="medium">MEDIUM</td><td>High</td><td>Model output is not validated for operational outbreak forecasting.</td><td>The saved model bundle loads and prediction/evaluation tests pass. The 38-row random test split, threshold-derived labels, partial 2026 data, lack of temporal/external validation, and uncalibrated probabilities remain substantial scientific limitations.</td></tr>
+        <tr><td>2</td><td class="high">HIGH</td><td>High</td><td>Public registration/login endpoints have no abuse rate limiting or equivalent control.</td><td><code>backend/app/routes/auth.py</code> applies no limiter to registration or login. Password spraying, credential stuffing, and registration abuse need mitigation before public exposure.</td></tr>
+        <tr><td>3</td><td class="medium">MEDIUM</td><td>High</td><td>Unauthenticated health routes reveal internal readiness and resource information.</td><td><code>backend/app/routes/health.py</code> exposes database/model/provider status; <code>/health/system</code> returns CPU, memory, and disk usage. Restrict detailed readiness/metrics to trusted monitoring while preserving only necessary liveness externally.</td></tr>
+        <tr><td>4</td><td class="medium">MEDIUM</td><td>High</td><td>Model artifact load errors can disclose server file paths via model-info responses.</td><td><code>backend/app/services/prediction.py</code> keeps the raw exception text and <code>/prediction/model-info</code> returns it. The observed missing-artifact error included absolute host paths. Return stable public error codes and retain detail only in protected logs.</td></tr>
+        <tr><td>5</td><td class="medium">MEDIUM</td><td>High</td><td>Email delivery depends on deployment configuration.</td><td>Email verification, password recovery, and contact delivery are implemented and tested with mocked delivery. Configure and verify SMTP settings in the actual deployment environment before relying on these workflows.</td></tr>
+        <tr><td>6</td><td class="medium">MEDIUM</td><td>High</td><td>Dataset and label construction do not support a validated outbreak-forecast claim.</td><td><code>merge_and_preprocess.py</code> produces 190 annual examples with rule-derived case thresholds. The 2026 climate series is partial-year; point climate inputs are not statewide spatial averages. No independent temporal/external validation or probability calibration is available.</td></tr>
+        <tr><td>7</td><td class="medium">MEDIUM</td><td>High</td><td>Production startup does not automatically apply migrations.</td><td>Compose waits for MySQL health and starts Gunicorn, while the deployment checklist requires a separate manual migration step. A fresh schema needs a controlled migration release step before application traffic.</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2>Implementation and optimization assessment</h2>
+    <ul>
+      <li>Implemented: lazy-loaded React routes, authenticated weather/report APIs, per-user weather persistence, role-scoped prediction history, indexed query fields, short-lived weather cache, rotating logs, single app-start model-loading path, health routes, Nginx static asset cache, and initial CI/deployment configuration.</li>
+      <li>In-process cache and rate limiting are not shared across workers/replicas. Use a shared backend before scaling horizontally.</li>
+      <li>Bundle build currently succeeds and separates the map and chart chunks; profile production usage before additional splitting or dependency removal.</li>
+      <li>No production load data exists to validate API/database/inference latency or memory optimization. Docker, MySQL, live providers, and production deployment were not exercised.</li>
+      <li>Admin user/prediction/report/dataset/climate/model-status and staged training workspaces are connected to protected APIs. Server infrastructure configuration and automated production model deployment are not provided.</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Related validation</h2>
+    <p>Current verification: backend tests 70 passed; frontend tests 12 passed; frontend production build passed. The 52% backend coverage figure is from an older coverage snapshot, not this audit. See the <a href="./test_report.html">test report</a> and <a href="./coverage_report.html">historical coverage report</a>.</p>
+  </section>
+</main></body>
+</html>

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dengue ANN Ensemble Evaluation Report</title>
+<style>body{font:15px/1.55 Arial,sans-serif;max-width:1000px;margin:2rem auto;padding:0 1rem;color:#263238}h1,h2{color:#00695c}table{border-collapse:collapse;margin:1rem 0;min-width:60%}td,th{border:1px solid #d8e0e3;padding:.55rem;text-align:left}th{background:#e8f5f3}img{max-width:100%;height:auto}.note{background:#fff8e1;padding:1rem}</style></head>
+<body><h1>Saved Dengue ANN Ensemble: Test Evaluation</h1>
+<p>Generated UTC: 2026-10-13T16:40:40.166056+00:00</p>
+<p>Model: <code>C:\Users\User\OneDrive\Desktop\thanugowda\main projrct\7th sem project\dengue\backend\app\ml\models\ensemble_model.keras</code>; test rows: 38; features: 48; target: <code>outbreak_risk</code>.</p>
+<h2>Metrics</h2><table><tr><th>Accuracy</th><td>0.6579</td></tr><tr><th>Macro precision</th><td>0.6295</td></tr><tr><th>Macro recall</th><td>0.6001</td></tr><tr><th>Macro F1-score</th><td>0.6093</td></tr><tr><th>Macro ROC AUC (one-vs-rest)</th><td>0.8798</td></tr></table>
+<h2>Confusion matrix</h2><table><thead><tr><th>Actual \ Predicted</th><th>High Risk</th><th>Low Risk</th><th>Moderate Risk</th></tr></thead><tbody><tr><th>High Risk</th><td>3</td><td>0</td><td>4</td></tr><tr><th>Low Risk</th><td>1</td><td>15</td><td>2</td></tr><tr><th>Moderate Risk</th><td>1</td><td>5</td><td>7</td></tr></tbody></table>
+<figure><img src="confusion_matrix.png" alt="Held-out test confusion matrix"><figcaption>Rows are actual classes; columns are predicted classes.</figcaption></figure>
+<figure><img src="roc_curve.png" alt="One-vs-rest ROC curves"><figcaption>ROC curves on the held-out test split.</figcaption></figure>
+<h2>Reproducibility and provenance</h2><pre>{
+  &quot;seed&quot;: 42,
+  &quot;inference_repeatability_verified&quot;: true,
+  &quot;probabilities_sha256&quot;: &quot;65137c7209b0ba7abe551779a6c3ee6d76fd31d8c53d26937ddd08cd92639639&quot;,
+  &quot;test_csv_sha256&quot;: &quot;480fbbaeb6807ad99443726b8027033b0bd17c7b1bcff3f05349140de9b4f4c4&quot;,
+  &quot;model_sha256&quot;: &quot;7ce7db17649c59f1488daa11fd6a5badcd12665e377026ea266fc851a71f8e39&quot;,
+  &quot;scaler_sha256&quot;: &quot;50f5da739636243b02413d25806fb2084dd007debe5fa171dcfec22a038c1c48&quot;,
+  &quot;label_encoder_sha256&quot;: &quot;ac6fc3b4cad882105240e1b72e68d7b7d20051935b0797f8a8037f904656fe38&quot;
+}</pre>
+<p class="note">This is a small, randomly stratified test split from annual State/UT observations and rule-derived case-count labels. Results are preliminary, not calibrated, and not evidence of future-year or operational outbreak forecasting performance.</p>
+</body></html>
