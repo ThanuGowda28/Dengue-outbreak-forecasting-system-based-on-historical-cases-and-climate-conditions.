@@ -6,6 +6,8 @@ import "leaflet/dist/leaflet.css";
 import "./styles/index.css";
 import "./styles/landing.css";
 import "./styles/dashboard.css";
+import "./styles/alerts.css";
+import "./styles/polish.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 

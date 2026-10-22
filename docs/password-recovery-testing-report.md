@@ -8,14 +8,16 @@ that described the recovery flow as UI-only.
 - `POST /api/auth/password-reset-request` validates an email, applies the
   public-request limit, and returns a generic response that does not reveal
   whether the account exists.
-- Recovery instructions are sent through the configured SMTP service. The
-  signed reset token is valid for one hour and is not stored in plaintext.
+- Recovery instructions are sent through the configured SMTP service. Reset
+  tokens are random, stored only as SHA-256 hashes, expire after one hour, and
+  are deleted when used or expired. Issuing a new token replaces the prior one.
 - `POST /api/auth/password-reset` validates token expiry/reuse and password
   policy, then changes the password hash.
 - The Forgot Password and Reset Password pages are connected to the backend
   and display request, expiry, invalid-token, and success states.
-- Delivery requires valid `MAIL_SERVER`, `MAIL_FROM`, and SMTP credentials
-  where required. Missing or failing mail configuration is reported as a
+- Delivery requires `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`,
+  `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_DEFAULT_SENDER`. Missing or
+  failing mail configuration is reported as a
   service error; it is not represented as a successful email delivery.
 
 ## Verification scope

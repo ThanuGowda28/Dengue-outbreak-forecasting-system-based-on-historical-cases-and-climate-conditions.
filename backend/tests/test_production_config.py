@@ -19,9 +19,14 @@ class ProductionConfigTests(unittest.TestCase):
             "DB_PASSWORD": "not-a-real-password",
             "OPENWEATHER_API_KEY": "not-a-real-weather-key",
             "MAIL_SERVER": "smtp.example.com",
-            "MAIL_FROM": "noreply@example.com",
+            "MAIL_PORT": "587",
+            "MAIL_USERNAME": "smtp-user@example.com",
+            "MAIL_PASSWORD": "not-a-real-mail-password",
+            "MAIL_DEFAULT_SENDER": "noreply@example.com",
             "MAIL_USE_TLS": "true",
             "MAIL_USE_SSL": "false",
+            "CELERY_BROKER_URL": "rediss://redis.example.com:6380/0",
+            "CELERY_RESULT_BACKEND": "rediss://redis.example.com:6380/1",
         }
         self.patcher = patch.dict(os.environ, self.environment, clear=True)
         self.patcher.start()
@@ -32,6 +37,7 @@ class ProductionConfigTests(unittest.TestCase):
     def test_accepts_complete_production_environment(self):
         config = get_config()
         self.assertFalse(config.DEBUG)
+        self.assertFalse(config.LOCAL_DEMO_MODE)
         self.assertTrue(config.REQUIRE_MODEL_AT_STARTUP)
 
     def test_requires_database_provider_and_mail_settings(self):
@@ -43,7 +49,11 @@ class ProductionConfigTests(unittest.TestCase):
             "FRONTEND_ORIGIN",
             "OPENWEATHER_API_KEY",
             "MAIL_SERVER",
-            "MAIL_FROM",
+            "MAIL_DEFAULT_SENDER",
+            "MAIL_USERNAME",
+            "MAIL_PASSWORD",
+            "CELERY_BROKER_URL",
+            "CELERY_RESULT_BACKEND",
         ):
             with self.subTest(name=name):
                 with patch.dict(os.environ, {name: ""}):
@@ -66,11 +76,19 @@ class ProductionConfigTests(unittest.TestCase):
         with patch.dict(os.environ, {"DB_PORT": "invalid"}):
             with self.assertRaisesRegex(RuntimeError, "DB_PORT"):
                 get_config()
-        with patch.dict(os.environ, {"MAIL_USERNAME": "smtp-user"}):
-            with self.assertRaisesRegex(RuntimeError, "MAIL_USERNAME"):
+        with patch.dict(os.environ, {"MAIL_PASSWORD": ""}):
+            with self.assertRaisesRegex(RuntimeError, "MAIL_PASSWORD"):
                 get_config()
         with patch.dict(os.environ, {"MAIL_USE_SSL": "true"}):
             with self.assertRaisesRegex(RuntimeError, "MAIL_USE_TLS"):
+                get_config()
+        with patch.dict(
+            os.environ, {"MAIL_USE_TLS": "false", "MAIL_USE_SSL": "false"}
+        ):
+            with self.assertRaisesRegex(RuntimeError, "SMTP must enable"):
+                get_config()
+        with patch.dict(os.environ, {"MAIL_PORT": "invalid"}):
+            with self.assertRaisesRegex(RuntimeError, "MAIL_PORT"):
                 get_config()
 
 

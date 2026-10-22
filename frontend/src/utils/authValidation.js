@@ -1,3 +1,5 @@
+import { getApiErrorMessage } from "./apiErrors.js";
+
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const PHONE_PATTERN = /^\+?[0-9\s().-]{7,20}$/;
 
@@ -14,7 +16,7 @@ export function passwordError(password) {
 export function apiError(error) {
   const data = error?.response?.data;
   return {
-    message: data?.message || error?.message || "Something went wrong. Please try again.",
+    message: data?.message || getApiErrorMessage(error, "Something went wrong. Please try again."),
     errors: data?.errors
   };
 }

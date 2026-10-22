@@ -11,7 +11,12 @@ _public_request_lock = threading.Lock()
 
 
 def email_is_configured(recipient_setting: str | None = None) -> bool:
-    required = (current_app.config.get("MAIL_SERVER"), current_app.config.get("MAIL_FROM"))
+    required = (
+        current_app.config.get("MAIL_SERVER"),
+        current_app.config.get("MAIL_DEFAULT_SENDER"),
+        current_app.config.get("MAIL_USERNAME"),
+        current_app.config.get("MAIL_PASSWORD"),
+    )
     return all(required) and (
         recipient_setting is None or bool(current_app.config.get(recipient_setting))
     )
@@ -34,15 +39,22 @@ def public_request_allowed(limit: int = 5) -> bool:
         return True
 
 
-def send_email(recipient: str, subject: str, body: str) -> None:
+def send_email(
+    recipient: str,
+    subject: str,
+    body: str,
+    html_body: str | None = None,
+) -> None:
     if not email_is_configured():
         raise RuntimeError("Email delivery is not configured.")
 
     message = EmailMessage()
-    message["From"] = current_app.config["MAIL_FROM"]
+    message["From"] = current_app.config["MAIL_DEFAULT_SENDER"]
     message["To"] = recipient
     message["Subject"] = subject
     message.set_content(body)
+    if html_body:
+        message.add_alternative(html_body, subtype="html")
 
     server_name = current_app.config["MAIL_SERVER"]
     port = int(current_app.config.get("MAIL_PORT", 587))

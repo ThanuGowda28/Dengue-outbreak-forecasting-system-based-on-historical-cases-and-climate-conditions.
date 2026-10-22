@@ -1,4 +1,5 @@
 import api from "./api.js";
+import { getApiErrorMessage } from "../utils/apiErrors.js";
 
 export async function getDistricts() {
   const { data } = await api.get("/weather/districts");
@@ -42,8 +43,14 @@ export function getPastDateRange(days = 30) {
 }
 
 export function normalizeWeatherError(error) {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return "Internet unavailable. Reconnect to the internet and refresh weather data.";
+  }
   if (error.response?.status === 429) {
     return "Too many weather requests. Please wait briefly and try again.";
   }
-  return error.response?.data?.message || "Weather data could not be loaded. Check your connection and try again.";
+  return error.response?.data?.message || getApiErrorMessage(
+    error,
+    "Weather data could not be loaded. Check your connection and try again."
+  );
 }

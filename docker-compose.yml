@@ -1,4 +1,17 @@
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks: [dengue-internal]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
   mysql:
     image: mysql:8.4
     restart: unless-stopped
@@ -25,16 +38,22 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
       APP_ENV: production
       ML_MODEL_DIR: /app/backend/app/ml/models
       ML_PROCESSED_DIR: /app/backend/app/ml/dataset/processed
       LOG_DIR: /app/backend/logs
       UPLOAD_FOLDER: /app/backend/instance/uploads
+      MOSQUITO_UPLOAD_DIR: /app/backend/instance/mosquito_detections
     volumes:
       - upload_data:/app/backend/instance/uploads
+      - detection_data:/app/backend/instance/mosquito_detections
       - log_data:/app/backend/logs
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks: [dengue-internal]
     healthcheck:
@@ -43,6 +62,60 @@ services:
       timeout: 5s
       start_period: 90s
       retries: 3
+
+  alert-worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_ENV: production
+      ML_MODEL_DIR: /app/backend/app/ml/models
+      ML_PROCESSED_DIR: /app/backend/app/ml/dataset/processed
+      LOG_DIR: /app/backend/logs
+      UPLOAD_FOLDER: /app/backend/instance/uploads
+    command: ["celery", "-A", "backend.celery_worker:celery", "worker", "--loglevel=info"]
+    volumes:
+      - upload_data:/app/backend/instance/uploads
+      - log_data:/app/backend/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [dengue-internal]
+
+  alert-beat:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_ENV: production
+      ML_MODEL_DIR: /app/backend/app/ml/models
+      ML_PROCESSED_DIR: /app/backend/app/ml/dataset/processed
+      LOG_DIR: /app/backend/logs
+      UPLOAD_FOLDER: /app/backend/instance/uploads
+    command: ["celery", "-A", "backend.celery_worker:celery", "beat", "--loglevel=info"]
+    volumes:
+      - upload_data:/app/backend/instance/uploads
+      - log_data:/app/backend/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [dengue-internal]
 
   frontend:
     build:
@@ -60,7 +133,9 @@ services:
 
 volumes:
   mysql_data:
+  redis_data:
   upload_data:
+  detection_data:
   log_data:
 
 networks:

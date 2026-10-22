@@ -1,4 +1,5 @@
 import axios from "axios";
+import { normalizeTransportError } from "../utils/apiErrors.js";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "/api";
@@ -41,6 +42,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    normalizeTransportError(error);
     const originalRequest = error.config;
     const isUnauthorized = error.response?.status === 401;
 
@@ -89,6 +91,7 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
+        normalizeTransportError(refreshError);
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));

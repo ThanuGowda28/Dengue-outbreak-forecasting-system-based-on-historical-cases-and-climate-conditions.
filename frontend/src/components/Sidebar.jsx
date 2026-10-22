@@ -1,12 +1,15 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FiActivity,
+  FiBell,
   FiCloud,
   FiDatabase,
   FiFileText,
   FiGrid,
+  FiSearch,
   FiLogOut,
   FiMap,
+  FiHeart,
   FiSettings,
   FiTarget,
   FiUsers
@@ -18,7 +21,12 @@ const userItems = [
   { label: "Prediction", to: "/prediction", icon: FiTarget },
   { label: "Weather", to: "/weather", icon: FiCloud },
   { label: "Risk map", to: "/risk-map", icon: FiMap },
+  { label: "Hospital finder", to: "/hospital-finder", icon: FiHeart },
+  { label: "Mosquito detection", to: "/mosquito-detection", icon: FiSearch },
+  { label: "Detection history", to: "/mosquito-detection/history", icon: FiActivity },
   { label: "History", to: "/history", icon: FiActivity },
+  { label: "Alert history", to: "/alerts", icon: FiBell },
+  { label: "Alert settings", to: "/alert-settings", icon: FiSettings },
   { label: "Profile", to: "/profile", icon: FiUsers },
   { label: "Settings", to: "/settings", icon: FiSettings }
 ];
@@ -31,6 +39,9 @@ const adminItems = [
   { label: "Climate data", to: "/climate-data", icon: FiCloud },
   { label: "Train model", to: "/train-model", icon: FiTarget },
   { label: "Reports", to: "/reports", icon: FiFileText },
+  { label: "Alert management", to: "/admin/alerts", icon: FiBell },
+  { label: "Mosquito detection reports", to: "/admin/mosquito-detection", icon: FiSearch },
+  { label: "Hospital management", to: "/admin/hospitals", icon: FiHeart },
   { label: "Settings", to: "/settings", icon: FiSettings }
 ];
 

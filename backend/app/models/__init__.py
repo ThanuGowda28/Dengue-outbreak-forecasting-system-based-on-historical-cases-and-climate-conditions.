@@ -48,4 +48,8 @@ from .weather_history import WeatherHistory
 from .prediction_history import PredictionHistory
 from .patient_records import EmergencyContact, PrescriptionRecord
 from .email_verification import EmailVerificationToken
+from .password_reset import PasswordResetToken
 from .user_preferences import UserPreference
+from .alert_model import AlertHistory, AlertPreference
+from .mosquito_detection import MosquitoDetection
+from .hospital import Hospital

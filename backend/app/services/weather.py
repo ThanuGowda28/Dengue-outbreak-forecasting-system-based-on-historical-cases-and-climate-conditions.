@@ -9,7 +9,7 @@ from flask_jwt_extended import get_jwt_identity
 from ..extensions import db
 from ..models import User
 from ..repositories.weather_history import save_weather_result
-from .karnataka_districts import KARNATAKA_DISTRICTS
+from .districts import ALL_DISTRICTS
 from .weather_provider import (
     WeatherProvider,
     WeatherProviderError,
@@ -182,7 +182,7 @@ def resolve_location(data, provider):
         district = next(
             (
                 item
-                for item in KARNATAKA_DISTRICTS
+                for item in ALL_DISTRICTS
                 if item["district"].casefold() == district_value.strip().casefold()
             ),
             None,
@@ -210,7 +210,7 @@ def resolve_location(data, provider):
     matched_district = next(
         (
             item["district"]
-            for item in KARNATAKA_DISTRICTS
+            for item in ALL_DISTRICTS
             if item["district"].casefold() == str(match.get("name", "")).casefold()
         ),
         None,

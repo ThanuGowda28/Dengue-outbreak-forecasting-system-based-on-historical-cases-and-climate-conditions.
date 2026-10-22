@@ -30,14 +30,49 @@ def _request_json(url, params, timeout=10):
     )
     try:
         with urlopen(request, timeout=timeout) as response:
+            response_status = getattr(response, "status", 200)
+            current_app.logger.debug(
+                "Weather provider response: url=%s status=%s",
+                urlunsplit((parts.scheme, parts.netloc, parts.path, "", "")),
+                response_status,
+            )
             try:
                 payload = json.loads(response.read().decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError):
+                current_app.logger.error(
+                    "Weather provider returned invalid JSON: url=%s status=%s",
+                    urlunsplit((parts.scheme, parts.netloc, parts.path, "", "")),
+                    response_status,
+                )
                 raise WeatherProviderError("Weather provider returned invalid JSON data.", 502)
             if not isinstance(payload, (dict, list)):
+                current_app.logger.error(
+                    "Weather provider returned an invalid payload: url=%s status=%s",
+                    urlunsplit((parts.scheme, parts.netloc, parts.path, "", "")),
+                    response_status,
+                )
                 raise WeatherProviderError("Weather provider returned invalid data.", 502)
             return payload
     except HTTPError as error:
+        try:
+            error_body = json.loads(
+                error.read(4096).decode("utf-8", errors="replace")
+            )
+            provider_message = (
+                error_body.get("message")
+                if isinstance(error_body, dict)
+                else None
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            provider_message = None
+        provider_message = str(provider_message or error.reason)
+        safe_url = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+        current_app.logger.error(
+            "Weather provider request failed: url=%s status=%s error=%s",
+            safe_url,
+            error.code,
+            provider_message,
+        )
         if error.code in (401, 403):
             raise WeatherProviderError("Weather provider rejected its API credentials.", 503)
         if error.code == 404:
@@ -45,7 +80,13 @@ def _request_json(url, params, timeout=10):
         if error.code == 429:
             raise WeatherProviderError("Weather provider rate limit exceeded.", 503)
         raise WeatherProviderError("Weather provider request failed.", 502)
-    except (URLError, TimeoutError, OSError):
+    except (URLError, TimeoutError, OSError) as error:
+        safe_url = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+        current_app.logger.error(
+            "Weather provider request failed: url=%s status=none error=%s",
+            safe_url,
+            getattr(error, "reason", str(error)),
+        )
         raise WeatherProviderError("Weather provider is temporarily unavailable.", 503)
 
 
@@ -191,7 +232,7 @@ class WeatherProvider:
             "start": start_date.strftime("%Y%m%d"),
             "end": end_date.strftime("%Y%m%d"),
             "community": "AG",
-            "parameters": "T2M,RH2M,PRECTOTCORR,WS2M,PS",
+            "parameters": "T2M,RH2M,PRECTOTCORR,WS2M,PS,ALLSKY_SFC_SW_DWN",
             "format": "JSON",
         }
         payload = _request_json(self.nasa_power_url, parameters)
@@ -203,7 +244,7 @@ class WeatherProvider:
             raise WeatherProviderError("Historical weather data was unavailable.", 502)
         if not isinstance(data, dict) or not isinstance(data.get("T2M"), dict):
             raise WeatherProviderError("Historical weather data was unavailable.", 502)
-        for key in ("RH2M", "PRECTOTCORR", "WS2M", "PS"):
+        for key in ("RH2M", "PRECTOTCORR", "WS2M", "PS", "ALLSKY_SFC_SW_DWN"):
             if key in data and not isinstance(data[key], dict):
                 raise WeatherProviderError("Historical weather data was invalid.", 502)
 
@@ -234,6 +275,9 @@ class WeatherProvider:
                     "wind_direction_deg": None,
                     "precipitation_mm": _number(
                         data.get("PRECTOTCORR", {}).get(date_key)
+                    ),
+                    "solar_radiation_mj_m2_day": _number(
+                        data.get("ALLSKY_SFC_SW_DWN", {}).get(date_key)
                     ),
                     "condition": None,
                     "description": None,

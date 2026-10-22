@@ -22,12 +22,20 @@ const DashboardLayout = lazy(() => import("./layouts/DashboardLayout.jsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard.jsx"));
 const Prediction = lazy(() => import("./pages/Prediction.jsx"));
-const Weather = lazy(() => import("./pages/Weather.jsx"));
+const Weather = lazy(() => import("./pages/WeatherDashboard.jsx"));
 const RiskMap = lazy(() => import("./pages/RiskMap.jsx"));
 const History = lazy(() => import("./pages/History.jsx"));
 const Reports = lazy(() => import("./pages/Reports.jsx"));
 const Settings = lazy(() => import("./pages/Settings.jsx"));
+const AlertHistory = lazy(() => import("./pages/AlertHistory.jsx"));
+const AlertSettings = lazy(() => import("./pages/AlertSettings.jsx"));
+const AdminAlerts = lazy(() => import("./pages/AdminAlerts.jsx"));
+const MosquitoDetection = lazy(() => import("./pages/MosquitoDetection.jsx"));
+const DetectionHistory = lazy(() => import("./pages/DetectionHistory.jsx"));
+const AdminMosquitoReports = lazy(() => import("./pages/AdminMosquitoReports.jsx"));
 const AdminWorkspace = lazy(() => import("./pages/AdminWorkspace.jsx"));
+const HospitalFinder = lazy(() => import("./pages/HospitalFinder.jsx"));
+const AdminHospitals = lazy(() => import("./pages/AdminHospitals.jsx"));
 
 function DashboardHome() {
   const { user } = useAuth();
@@ -50,7 +58,10 @@ function AppRoutes() {
   const location = useLocation();
   const dashboardMode = [
     "/dashboard", "/admin", "/prediction", "/weather", "/risk-map",
-    "/history", "/profile", "/settings", "/reports", "/users",
+    "/history", "/profile", "/settings", "/alerts", "/alert-settings", "/reports", "/users",
+    "/admin/alerts", "/mosquito-detection",
+    "/admin/mosquito-detection",
+    "/hospital-finder", "/admin/hospitals",
     "/datasets", "/climate-data", "/train-model"
   ].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   if (loading) return <LoadingSpinner label="Checking your session…" />;
@@ -81,7 +92,12 @@ function AppRoutes() {
               <Route path="/prediction" element={<Prediction />} />
               <Route path="/weather" element={<Weather />} />
               <Route path="/risk-map" element={<RiskMap />} />
+              <Route path="/mosquito-detection" element={<MosquitoDetection />} />
+              <Route path="/mosquito-detection/history" element={<DetectionHistory />} />
+              <Route path="/hospital-finder" element={<HospitalFinder />} />
               <Route path="/history" element={<History />} />
+              <Route path="/alerts" element={<AlertHistory />} />
+              <Route path="/alert-settings" element={<AlertSettings />} />
               <Route path="/profile" element={<ProfileWorkspace />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/reports" element={<Reports />} />
@@ -95,6 +111,9 @@ function AppRoutes() {
               <Route path="/datasets" element={<AdminWorkspace />} />
               <Route path="/climate-data" element={<AdminWorkspace />} />
               <Route path="/train-model" element={<AdminWorkspace />} />
+              <Route path="/admin/alerts" element={<AdminAlerts />} />
+              <Route path="/admin/mosquito-detection" element={<AdminMosquitoReports />} />
+              <Route path="/admin/hospitals" element={<AdminHospitals />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />

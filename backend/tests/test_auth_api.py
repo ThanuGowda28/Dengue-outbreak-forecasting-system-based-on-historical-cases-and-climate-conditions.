@@ -5,18 +5,29 @@ from unittest.mock import patch
 
 from backend.app import create_app
 from backend.app.extensions import bcrypt, db
-from backend.app.models import EmailVerificationToken, User, UserPreference, utcnow
+from backend.app.models import (
+    EmailVerificationToken,
+    PasswordResetToken,
+    User,
+    UserPreference,
+    utcnow,
+)
 
 
 class AuthTestConfig:
     TESTING = True
+    LOCAL_DEMO_MODE = True
     SECRET_KEY = "auth-test-secret-key-at-least-32-bytes"
     JWT_SECRET_KEY = "auth-test-jwt-secret-key-at-least-32"
     SQLALCHEMY_DATABASE_URI = "sqlite://"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FRONTEND_ORIGIN = "http://localhost:5173"
     MAIL_SERVER = "smtp.test"
-    MAIL_FROM = "noreply@example.test"
+    MAIL_PORT = 587
+    MAIL_USERNAME = "smtp-user@example.test"
+    MAIL_PASSWORD = "smtp-test-password"
+    MAIL_DEFAULT_SENDER = "noreply@example.test"
+    MAIL_USE_TLS = True
 
 
 class AuthApiTests(unittest.TestCase):
@@ -76,6 +87,12 @@ class AuthApiTests(unittest.TestCase):
             "/api/auth/register", json=self.registration_payload()
         )
         self.assertEqual(response.status_code, 201)
+        self.send_email.assert_called_once()
+        self.assertEqual(self.send_email.call_args.args[0], "test@example.test")
+        self.assertIn(
+            "http://localhost:5173/verify-email?token=",
+            self.send_email.call_args.args[2],
+        )
         self.assertNotIn("access_token", response.json)
         self.assertNotIn("refresh_token", response.json)
         self.assertFalse(response.json["user"]["is_verified"])
@@ -91,6 +108,12 @@ class AuthApiTests(unittest.TestCase):
             ).status_code,
             403,
         )
+
+        tampered = self.client.post(
+            "/api/auth/email-verification", json={"token": token + "tampered"}
+        )
+        self.assertEqual(tampered.status_code, 400)
+        self.assertFalse(user.is_verified)
 
         verified = self.client.post(
             "/api/auth/email-verification", json={"token": token}
@@ -176,11 +199,65 @@ class AuthApiTests(unittest.TestCase):
 
     def test_registration_requires_email_delivery_configuration(self):
         self.app.config["MAIL_SERVER"] = ""
+        self.app.config["LOCAL_DEMO_MODE"] = False
         response = self.client.post(
             "/api/auth/register", json=self.registration_payload()
         )
         self.assertEqual(response.status_code, 503)
         self.assertIsNone(User.query.filter_by(email="test@example.test").first())
+
+    def test_debug_registration_without_smtp_auto_verifies_and_allows_login(self):
+        self.app.config["DEBUG"] = True
+        for setting in (
+            "MAIL_SERVER",
+            "MAIL_USERNAME",
+            "MAIL_PASSWORD",
+            "MAIL_DEFAULT_SENDER",
+        ):
+            self.app.config[setting] = ""
+
+        response = self.client.post(
+            "/api/auth/register", json=self.registration_payload()
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json["user"]["is_verified"])
+        self.assertIn("Local demo mode verified", response.json["message"])
+        self.send_email.assert_not_called()
+        self.assertIsNone(
+            EmailVerificationToken.query.filter_by(
+                user_id=response.json["user"]["id"]
+            ).first()
+        )
+
+        login = self.client.post(
+            "/api/auth/login",
+            json={
+                "email": "test@example.test",
+                "password": "StrongPass1!",
+            },
+        )
+        self.assertEqual(login.status_code, 200)
+        self.assertTrue(login.json["access_token"])
+
+    def test_registration_auto_verifies_when_smtp_delivery_fails_in_demo_mode(self):
+        self.send_email.side_effect = RuntimeError("SMTP unavailable")
+        response = self.client.post(
+            "/api/auth/register", json=self.registration_payload()
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json["user"]["is_verified"])
+        self.assertIn("Local demo mode verified", response.json["message"])
+        user = User.query.filter_by(email="test@example.test").one()
+        self.assertIsNone(
+            EmailVerificationToken.query.filter_by(user_id=user.id).first()
+        )
+        login = self.client.post(
+            "/api/auth/login",
+            json={"email": user.email, "password": "StrongPass1!"},
+        )
+        self.assertEqual(login.status_code, 200)
+        self.assertTrue(login.json["access_token"])
 
     def test_registration_hashes_password_and_rejects_duplicate_email(self):
         response = self.client.post(
@@ -209,6 +286,10 @@ class AuthApiTests(unittest.TestCase):
         self.assertIn("If an account exists", requested.json["message"])
         email_body = self.send_email.call_args.args[2]
         token = re.search(r"token=([^\s]+)", email_body).group(1)
+        self.assertIn("http://localhost:5173/reset-password?token=", email_body)
+        user = User.query.filter_by(email="test@example.test").one()
+        token_record = PasswordResetToken.query.filter_by(user_id=user.id).one()
+        self.assertNotEqual(token_record.token_hash, token)
 
         changed = self.client.post(
             "/api/auth/password-reset",
@@ -219,8 +300,10 @@ class AuthApiTests(unittest.TestCase):
             },
         )
         self.assertEqual(changed.status_code, 200)
-        user = User.query.filter_by(email="test@example.test").one()
         self.assertTrue(bcrypt.check_password_hash(user.password_hash, "NewStrongPass2!"))
+        self.assertIsNone(
+            PasswordResetToken.query.filter_by(user_id=user.id).first()
+        )
         reused = self.client.post(
             "/api/auth/password-reset",
             json={
@@ -230,15 +313,157 @@ class AuthApiTests(unittest.TestCase):
             },
         )
         self.assertEqual(reused.status_code, 400)
+        self.assertEqual(
+            self.client.post(
+                "/api/auth/login",
+                json={"email": user.email, "password": "StrongPass1!"},
+            ).status_code,
+            401,
+        )
+        login = self.client.post(
+            "/api/auth/login",
+            json={"email": user.email, "password": "NewStrongPass2!"},
+        )
+        self.assertEqual(login.status_code, 200)
+        self.assertTrue(login.json["access_token"])
+
+    def test_password_reset_rejects_tampered_and_expired_tokens(self):
+        self._register()
+        requested = self.client.post(
+            "/api/auth/password-reset-request",
+            json={"email": "test@example.test"},
+            environ_base={"REMOTE_ADDR": "192.0.2.12"},
+        )
+        self.assertEqual(requested.status_code, 202)
+        token = re.search(
+            r"token=([^\s]+)", self.send_email.call_args.args[2]
+        ).group(1)
+        payload = {
+            "token": token + "tampered",
+            "password": "NewStrongPass2!",
+            "confirm_password": "NewStrongPass2!",
+        }
+        tampered = self.client.post("/api/auth/password-reset", json=payload)
+        self.assertEqual(tampered.status_code, 400)
+        self.assertIn("invalid", tampered.json["message"].lower())
+
+        user = User.query.filter_by(email="test@example.test").one()
+        record = PasswordResetToken.query.filter_by(user_id=user.id).one()
+        record.expires_at = utcnow() - timedelta(seconds=1)
+        db.session.commit()
+        payload["token"] = token
+        expired = self.client.post("/api/auth/password-reset", json=payload)
+        self.assertEqual(expired.status_code, 400)
+        self.assertIn("expired", expired.json["message"].lower())
+        self.assertIsNone(
+            PasswordResetToken.query.filter_by(user_id=user.id).first()
+        )
+
+    def test_password_change_invalidates_pending_reset_token(self):
+        registered = self._register()
+        self.client.post(
+            "/api/auth/password-reset-request",
+            json={"email": "test@example.test"},
+            environ_base={"REMOTE_ADDR": "192.0.2.13"},
+        )
+        token = re.search(
+            r"token=([^\s]+)", self.send_email.call_args.args[2]
+        ).group(1)
+        changed = self.client.post(
+            "/api/auth/change-password",
+            headers={"Authorization": f"Bearer {registered['access_token']}"},
+            json={
+                "current_password": "StrongPass1!",
+                "new_password": "NewStrongPass2!",
+                "confirm_password": "NewStrongPass2!",
+            },
+        )
+        self.assertEqual(changed.status_code, 200)
+        self.assertEqual(
+            self.client.post(
+                "/api/auth/password-reset",
+                json={
+                    "token": token,
+                    "password": "AnotherStrong3!",
+                    "confirm_password": "AnotherStrong3!",
+                },
+            ).status_code,
+            400,
+        )
+
+    def test_password_reset_response_does_not_reveal_unknown_accounts(self):
+        self._register()
+        existing = self.client.post(
+            "/api/auth/password-reset-request",
+            json={"email": "test@example.test"},
+            environ_base={"REMOTE_ADDR": "192.0.2.14"},
+        )
+        unknown = self.client.post(
+            "/api/auth/password-reset-request",
+            json={"email": "unknown@example.test"},
+            environ_base={"REMOTE_ADDR": "192.0.2.15"},
+        )
+        self.assertEqual(existing.status_code, 202)
+        self.assertEqual(unknown.status_code, 202)
+        self.assertEqual(existing.json, unknown.json)
+        self.assertEqual(self.send_email.call_count, 3)
 
     def test_password_recovery_reports_missing_email_configuration(self):
         self.app.config["MAIL_SERVER"] = ""
+        self.app.config["LOCAL_DEMO_MODE"] = False
         response = self.client.post(
             "/api/auth/password-reset-request",
             json={"email": "test@example.test"},
             environ_base={"REMOTE_ADDR": "192.0.2.11"},
         )
         self.assertEqual(response.status_code, 503)
+
+    def test_local_demo_password_reset_works_without_smtp(self):
+        self._register()
+        for setting in (
+            "MAIL_SERVER",
+            "MAIL_USERNAME",
+            "MAIL_PASSWORD",
+            "MAIL_DEFAULT_SENDER",
+        ):
+            self.app.config[setting] = ""
+
+        requested = self.client.post(
+            "/api/auth/password-reset-request",
+            json={"email": "test@example.test"},
+            environ_base={"REMOTE_ADDR": "192.0.2.16"},
+        )
+        self.assertEqual(requested.status_code, 202)
+        self.assertIn("demo_reset_url", requested.json)
+        token = re.search(r"token=([^\s]+)", requested.json["demo_reset_url"]).group(1)
+
+        changed = self.client.post(
+            "/api/auth/password-reset",
+            json={
+                "token": token,
+                "password": "DemoResetPass2!",
+                "confirm_password": "DemoResetPass2!",
+            },
+        )
+        self.assertEqual(changed.status_code, 200)
+        login = self.client.post(
+            "/api/auth/login",
+            json={"email": "test@example.test", "password": "DemoResetPass2!"},
+        )
+        self.assertEqual(login.status_code, 200)
+
+    def test_local_demo_password_reset_falls_back_when_smtp_fails(self):
+        self._register()
+        self.send_email.side_effect = RuntimeError("SMTP unavailable")
+        requested = self.client.post(
+            "/api/auth/password-reset-request",
+            json={"email": "test@example.test"},
+            environ_base={"REMOTE_ADDR": "192.0.2.17"},
+        )
+
+        self.assertEqual(requested.status_code, 202)
+        self.assertIn("demo_reset_url", requested.json)
+        self.assertIn("Email delivery is unavailable", requested.json["message"])
 
     def test_registration_and_login_validation(self):
         payload = self.registration_payload()

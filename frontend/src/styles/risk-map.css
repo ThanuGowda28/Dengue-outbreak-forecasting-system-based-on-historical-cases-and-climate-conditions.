@@ -1,0 +1,44 @@
+.risk-map-heading { align-items: flex-start; display: flex; gap: 16px; justify-content: space-between; }
+.risk-map-heading h2 { color: #294851; font-size: 1.18rem; font-weight: 700; margin: 4px 0; }
+.risk-map-heading p { color: #839398; font-size: .7rem; line-height: 1.65; margin: 0; }
+.risk-map-refresh { align-items: center; display: inline-flex; flex: none; gap: 8px; }
+.risk-map-container { position: relative; }
+.risk-map-legend { background: rgba(255,255,255,.96); border: 1px solid #dfe8e6; border-radius: 11px; bottom: 16px; box-shadow: 0 5px 20px rgba(18,48,44,.14); color: #52696c; display: grid; font-size: .67rem; gap: 8px; min-width: 118px; padding: 11px 13px; position: absolute; right: 16px; z-index: 1000; }
+.risk-map-legend strong { color: #294851; font-size: .68rem; margin-bottom: 1px; }
+.risk-map-legend span { align-items: center; display: flex; gap: 8px; }
+.risk-map-legend i { border: 1px solid rgba(0,0,0,.08); border-radius: 50%; height: 10px; width: 10px; }
+.risk-map-empty { align-items: center; color: #75868b; display: flex; height: 100%; justify-content: center; padding: 24px; text-align: center; }
+.risk-map-disclaimer { align-items: flex-start; background: #fff8e9; border: 1px solid #f2e4c1; border-radius: 10px; color: #7c6945; display: flex; font-size: .67rem; gap: 8px; line-height: 1.65; margin-top: 14px; padding: 11px 13px; }
+.risk-map-disclaimer svg { flex: none; margin-top: 2px; }
+.district-risk-popup { min-width: 230px; }
+.district-risk-popup-heading { align-items: center; border-bottom: 1px solid #edf1f2; display: flex; gap: 10px; justify-content: space-between; padding-bottom: 8px; }
+.district-risk-popup-heading strong { color: #294851; font-size: .83rem; }
+.district-risk-popup-heading span { font-size: .68rem; font-weight: 700; }
+.district-risk-popup dl { display: grid; gap: 5px; margin: 9px 0; }
+.district-risk-popup dl > div { display: flex; gap: 8px; justify-content: space-between; }
+.district-risk-popup dt { color: #829197; }
+.district-risk-popup dd { color: #38565d; font-weight: 600; margin: 0; text-align: right; }
+.district-risk-recommendation { align-items: flex-start; background: #fff8e9; border-radius: 8px; color: #a87820; display: flex; gap: 8px; line-height: 1.5; padding: 9px; }
+.district-risk-recommendation > svg { flex: none; margin-top: 1px; }
+.district-risk-recommendation strong { display: block; font-size: .68rem; }
+.district-risk-recommendation ul { color: #75684f; font-size: .64rem; margin: 5px 0 0; padding-left: 15px; }
+.district-risk-recommendation li + li { margin-top: 3px; }
+.risk-map-detail-pill { align-items: center; border-radius: 100px; display: inline-flex; font-size: .66rem; font-weight: 700; gap: 7px; padding: 5px 9px; }
+.risk-map-detail-pill i { border-radius: 50%; height: 8px; width: 8px; }
+.risk-map-detail-values { border-bottom: 1px solid #edf1f2; border-top: 1px solid #edf1f2; margin: 10px 0; padding: 9px 0; }
+.risk-map-detail-values p { color: #78898e; font-size: .67rem; line-height: 1.6; margin: 8px 0 0; }
+.risk-map-data-message { font-size: .69rem; line-height: 1.6; }
+.risk-map-spinner { align-items: center; color: #71858a; display: flex; font-size: .7rem; gap: 8px; padding: 12px 0; }
+.risk-map-leaflet-popup .leaflet-popup-content { margin: 13px 16px; }
+
+@media (max-width: 767.98px) {
+  .risk-map-heading { align-items: stretch; flex-direction: column; }
+  .risk-map-refresh { align-self: flex-start; }
+  .risk-map-legend { bottom: 10px; right: 10px; }
+  .risk-map-container { min-height: 310px; }
+}
+.breeding-site-popup { display: grid; gap: 5px; font-size: .72rem; }
+.breeding-site-popup strong { color: #a3262b; }
+.breeding-site-popup small { color: #71848a; }
+.breeding-site-popup a { font-weight: 600; }
+.breeding-site-map-key { background: #d13c3c; border: 2px solid #8f1d21; border-radius: 50%; display: inline-block; flex: none; height: 12px; width: 12px; }

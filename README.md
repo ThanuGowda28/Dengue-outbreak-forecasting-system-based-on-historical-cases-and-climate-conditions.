@@ -72,7 +72,11 @@ python -m pip install -r backend\requirements.txt
 flask --app backend.run run --debug
 ```
 
-The API scaffold is available at `http://localhost:5000`; its health endpoint is `http://localhost:5000/api/health`.
+The API is available at `http://localhost:5000`; its health endpoint is
+`http://localhost:5000/api/health`. In development, local demo mode is enabled
+by default: registration is auto-verified if SMTP is missing or delivery fails,
+and password recovery displays a one-hour reset link when email cannot be sent.
+Testing and production configurations do not enable this fallback.
 
 Apply the checked-in database migrations after installing dependencies:
 
@@ -214,6 +218,17 @@ All routes below are prefixed with `http://localhost:5000/api`:
 | DELETE | `/prediction/history/{id}` | Access JWT | Delete own result or any result as admin |
 | GET | `/prediction/latest` | Access JWT | Latest saved result for the signed-in user; admins see the latest overall |
 | GET | `/prediction/model-info` | Access JWT | Model artifact availability and expected input units |
+| POST | `/alerts/send` | Access JWT | Queue eligible email/SMS alerts for one of the signed-in user's saved predictions |
+| GET | `/alerts/history` | Access JWT | Paginated alert history scoped to the signed-in user |
+| GET/PUT | `/alerts/settings` | Access JWT | Read or update email, opted-in SMS, daily-summary, high-risk, and weather alert preferences |
+| GET | `/alerts/admin/history` | Admin JWT | Search/filter system alert history |
+| GET | `/alerts/admin/export` | Admin JWT | Download filtered alert history as CSV |
+| POST | `/mosquito-detection/analyze` | Access JWT | Analyze a JPG/JPEG/PNG image (max 10 MB), save its result, and queue eligible high-risk alerts |
+| GET | `/mosquito-detection/history` | Access JWT | Search and date/risk-filter the current user's saved image analyses |
+| GET/DELETE | `/mosquito-detection/{id}/image`, `/mosquito-detection/{id}` | Access JWT | Retrieve owner-scoped images or delete an analysis and its stored images |
+| GET | `/mosquito-detection/{id}/report.pdf` | Access JWT | Download an analysis report with the uploaded image |
+| GET | `/mosquito-detection/admin/reports`, `/mosquito-detection/admin/export` | Admin JWT | Search/filter all analyses, view uploaded images, and export report rows to CSV |
+| GET | `/mosquito-detection/high-risk-locations` | Admin JWT | Show user-shared high-risk site coordinates on the Karnataka risk map |
 | GET/POST | `/admin/users` | Admin JWT | Search and create accounts |
 | PATCH/DELETE | `/admin/users/{id}` | Admin JWT | Update/delete an account |
 | GET | `/admin/predictions` | Admin JWT | List prediction records |
@@ -300,10 +315,14 @@ include uppercase, lowercase, numeric, and special characters. Login takes
 `district`, and `state`; email changes are rejected. Change-password requests
 use `current_password`, `new_password`, and `confirm_password`.
 
-Configure `MAIL_SERVER` and `MAIL_FROM` (and the corresponding SMTP credentials
-when required) before accepting registrations. Apply the database migrations
-with `flask --app backend.run db upgrade`; registration returns HTTP 503 without
-creating an account when email delivery is not configured. Registration creates
+Configure `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`,
+`MAIL_PASSWORD`, and `MAIL_DEFAULT_SENDER` before accepting registrations.
+For Gmail, use `smtp.gmail.com`, port `587`, TLS enabled, your full Gmail
+address for both username and sender, and a Gmail App Password for the password.
+Never use your normal Gmail password or commit SMTP credentials. Apply the
+database migrations with `flask --app backend.run db upgrade`; registration
+returns HTTP 503 without creating an account when email delivery is not
+configured. Registration creates
 an unverified account and sends a single-use verification link that expires
 after 24 hours. Sign-in, including administrator sign-in, is denied until the
 email is verified. The resend endpoint returns a generic response for unknown,

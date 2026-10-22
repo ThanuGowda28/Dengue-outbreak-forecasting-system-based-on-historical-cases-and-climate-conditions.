@@ -49,6 +49,9 @@ export default function Login() {
           <h1>Sign in to DengueWatch</h1>
           <p>Access your community health dashboard.</p>
         </div>
+        {location.state?.notice && (
+          <AlertMessage message={location.state.notice} variant="success" />
+        )}
         <AlertMessage message={error?.message} errors={error?.errors} />
         {verificationRequired && <p className="alert alert-info">Need a new link? <Link to="/verify-email" state={{ email: form.email }}>Resend verification email</Link></p>}
         <form onSubmit={submit}>

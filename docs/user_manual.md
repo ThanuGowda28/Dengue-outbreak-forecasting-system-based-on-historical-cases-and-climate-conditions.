@@ -52,9 +52,8 @@ npm run dev
 ```
 
 Open `http://localhost:5173`. The backend is normally at
-`http://localhost:5000/api`. Apply migrations before the first real login or
-weather request. The current database migration head is
-`0007_email_verification_tokens`.
+`http://localhost:5000/api`. Apply migrations before the first login or
+weather request; the current database migration head is `0011_hospital_finder`.
 
 ## 4. Public access, registration, and login
 
@@ -64,13 +63,12 @@ account. Registration requires a full name, email, phone, district, state, and
 a password of at least eight characters containing uppercase, lowercase,
 numeric, and special characters. Duplicate email addresses are rejected.
 
-After submitting registration, check the email account for a verification link
-and open it within 24 hours. The public **Verify Email** page confirms a valid
-link; expired or invalid links show an explanation and allow requesting a new
-link. A user who did not receive the message can visit `/verify-email`, enter
-the registration email, and request another link. Resending replaces the
-previous token. Configure working SMTP settings before registering; without
-email delivery configuration registration is unavailable.
+When SMTP works, check the email account for a verification link and open it
+within 24 hours. The public **Verify Email** page confirms a valid link;
+expired or invalid links show an explanation and allow requesting a new link.
+In local demo mode, accounts are verified automatically when email is
+unavailable, and password recovery provides a one-hour reset link directly in
+the page. SMTP-backed recovery keeps the same enumeration-resistant response.
 
 Use **Login** with the registered email and password after verification.
 Unverified users, including administrators, cannot sign in. The authenticated
@@ -94,8 +92,14 @@ limits.
 1. Open **Weather**.
 2. Search for a city, district, or state; select a suggested location.
 3. View current conditions and forecast when the OpenWeather key is configured.
-4. Use the history controls to request daily historical climate data from
-   NASA POWER.
+4. Weather observations refresh automatically every 30 minutes; use **Refresh**
+   to request them sooner. Temperature, humidity, rainfall, and wind trends can
+   be viewed for today, the last 7 days, or the last 30 days.
+5. A high-risk weather alert appears when reported rainfall exceeds 100 mm or
+   humidity exceeds 80%. These thresholds are weather alerts, not dengue
+   predictions. The current ensemble result remains unavailable for a live
+   snapshot because the model requires annual climate aggregates.
+6. Historical chart data is requested from NASA POWER.
 
 Temperature is Celsius, humidity is percent, precipitation is millimetres,
 pressure is hPa, and wind speed is m/s. Some values (for example UV index or
@@ -144,7 +148,7 @@ classifier is not validated for medical or public-health decisions.
 | Prediction shows unavailable | Check model readiness at `/api/health/model` and inspect the saved model artifacts. |
 | Browser cannot reach API | Check `VITE_API_BASE_URL`, `FRONTEND_ORIGIN`, and that Flask is running. |
 | Database error | Check MySQL service, database grants, connection values, and migration status. |
-| Forgot Password does not send email | Configure `MAIL_SERVER`, `MAIL_FROM`, SMTP credentials, and check provider connectivity. |
+| Forgot Password does not send email | Configure `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_DEFAULT_SENDER`; for Gmail, use an App Password and check provider connectivity. |
 
 For application routes and schema details, see
 [Technical Documentation](./technical_documentation.md). The verified tests

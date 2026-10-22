@@ -12,7 +12,9 @@ class ContactTestConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FRONTEND_ORIGIN = "http://localhost:5173"
     MAIL_SERVER = "smtp.test"
-    MAIL_FROM = "noreply@example.test"
+    MAIL_USERNAME = "smtp-user@example.test"
+    MAIL_PASSWORD = "smtp-test-password"
+    MAIL_DEFAULT_SENDER = "noreply@example.test"
     CONTACT_EMAIL = "team@example.test"
 
 

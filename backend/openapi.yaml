@@ -16,6 +16,7 @@ tags:
   - name: Health
   - name: Authentication
   - name: Weather
+  - name: Risk Map
   - name: Dashboard
   - name: Prediction
   - name: Reports
@@ -434,6 +435,40 @@ paths:
         "429": { description: Per-user weather request limit exceeded }
         "502": { description: Provider returned an invalid response or request failed }
         "503": { description: Historical provider unavailable, misconfigured, or has no published observations for the selected range }
+  /risk-map:
+    get:
+      tags: [Risk Map]
+      summary: Get modelled dengue risk for Karnataka districts
+      description: Uses rolling 365-day NASA POWER climate aggregates with the existing ensemble model. Prediction is the model's uncalibrated top-class confidence, not a calibrated probability.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Risk levels and climate observations for all Karnataka districts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [district, latitude, longitude, risk, temperature, humidity, rainfall, prediction, recommendations]
+                  properties:
+                    district: { type: string }
+                    state: { type: string, example: Karnataka }
+                    latitude: { type: number, format: float }
+                    longitude: { type: number, format: float }
+                    risk: { type: string, enum: [Low, Medium, High, Very High] }
+                    temperature: { type: number, description: Rolling-year mean temperature in Celsius }
+                    humidity: { type: number, description: Rolling-year mean relative humidity percentage }
+                    rainfall: { type: number, description: Rolling-year rainfall total in millimeters }
+                    prediction: { type: number, description: Uncalibrated model top-class confidence percentage }
+                    recommendations:
+                      type: array
+                      items: { type: string }
+        "401": { description: Authentication required }
+        "429": { description: Per-user weather request limit exceeded }
+        "500": { description: Ensemble inference failed }
+        "502": { description: Historical weather provider returned an invalid response }
+        "503": { description: Prediction model or historical climate data unavailable }
   /dashboard:
     get:
       tags: [Dashboard]
@@ -486,6 +521,188 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         "200": { description: Model metadata and availability }
+  /alerts/send:
+    post:
+      tags: [Alerts]
+      summary: Queue eligible alerts for an owned prediction
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prediction_id]
+              properties:
+                prediction_id: { type: integer, minimum: 1 }
+      responses:
+        "202": { description: Eligible email and SMS alerts queued }
+        "400": { description: Invalid request or prediction identifier }
+        "404": { description: Prediction not found or outside user scope }
+  /alerts/settings:
+    get:
+      tags: [Alerts]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Current user's alert preferences }
+    put:
+      tags: [Alerts]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email_alerts, sms_alerts, daily_notifications, high_risk_notifications, weather_alerts]
+              properties:
+                email_alerts: { type: boolean }
+                sms_alerts: { type: boolean, description: Disabled by default; users must opt in }
+                daily_notifications: { type: boolean }
+                high_risk_notifications: { type: boolean }
+                weather_alerts: { type: boolean }
+      responses:
+        "200": { description: Preferences saved }
+        "400": { description: Invalid or incomplete preferences }
+  /alerts/history:
+    get:
+      tags: [Alerts]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - in: query
+          name: type
+          schema: { type: string, enum: [email, sms] }
+        - in: query
+          name: status
+          schema: { type: string, enum: [queued, sending, retrying, sent, failed] }
+        - in: query
+          name: start_date
+          schema: { type: string, format: date }
+        - in: query
+          name: end_date
+          schema: { type: string, format: date }
+      responses:
+        "200": { description: Paginated alert history scoped to the authenticated user }
+        "400": { description: Invalid pagination, filter, or date range }
+  /alerts/admin/history:
+    get:
+      tags: [Alerts]
+      summary: Search and filter all alert records
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Paginated system-wide alert history including user details }
+        "403": { description: Administrator access required }
+  /alerts/admin/export:
+    get:
+      tags: [Alerts]
+      summary: Export filtered alert history as CSV
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: CSV attachment }
+        "403": { description: Administrator access required }
+  /mosquito-detection/analyze:
+    post:
+      tags: [Mosquito detection]
+      summary: Analyze and save an uploaded potential breeding-site image
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image: { type: string, format: binary }
+                latitude: { type: number, minimum: -90, maximum: 90 }
+                longitude: { type: number, minimum: -180, maximum: 180 }
+                district: { type: string, maxLength: 100 }
+      responses:
+        "201": { description: Analysis result (prediction, confidence, objects_detected, recommendation, and alerts) }
+        "400": { description: Invalid image, location, or unsupported file format }
+        "413": { description: Image exceeds 10 MB }
+        "503": { description: Trained mosquito detector is unavailable or incompatible }
+  /mosquito-detection/history:
+    get:
+      tags: [Mosquito detection]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: per_page, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+        - { in: query, name: search, schema: { type: string, maxLength: 100 } }
+        - { in: query, name: risk, schema: { type: string, enum: [High Risk Breeding Site, Medium Risk Breeding Site, Low Risk, No Breeding Site Detected] } }
+        - { in: query, name: start_date, schema: { type: string, format: date } }
+        - { in: query, name: end_date, schema: { type: string, format: date } }
+      responses:
+        "200": { description: Owner-scoped paginated analysis history }
+  /mosquito-detection/{detection_id}:
+    parameters:
+      - { in: path, name: detection_id, required: true, schema: { type: integer } }
+    delete:
+      tags: [Mosquito detection]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Analysis record and stored images deleted }
+        "404": { description: Record not found or outside user scope }
+  /mosquito-detection/{detection_id}/image:
+    parameters:
+      - { in: path, name: detection_id, required: true, schema: { type: integer } }
+    get:
+      tags: [Mosquito detection]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: kind, schema: { type: string, enum: [original, annotated] } }
+      responses:
+        "200": { description: Private original or annotated image, owner/admin only }
+        "404": { description: Image not found or access denied }
+  /mosquito-detection/{detection_id}/report.pdf:
+    parameters:
+      - { in: path, name: detection_id, required: true, schema: { type: integer } }
+    get:
+      tags: [Mosquito detection]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Downloadable PDF containing the uploaded image and analysis }
+  /mosquito-detection/{detection_id}/alerts:
+    parameters:
+      - { in: path, name: detection_id, required: true, schema: { type: integer } }
+    post:
+      tags: [Mosquito detection]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "202": { description: Eligible failed high-risk alerts queued for retry }
+  /mosquito-detection/admin/reports:
+    get:
+      tags: [Mosquito detection]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: search, schema: { type: string } }
+        - { in: query, name: risk, schema: { type: string } }
+        - { in: query, name: start_date, schema: { type: string, format: date } }
+        - { in: query, name: end_date, schema: { type: string, format: date } }
+      responses:
+        "200": { description: Admin-only paginated detection reports, including user details }
+        "403": { description: Administrator access required }
+  /mosquito-detection/admin/export:
+    get:
+      tags: [Mosquito detection]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Admin-only CSV export of filtered reports }
+        "403": { description: Administrator access required }
+  /mosquito-detection/high-risk-locations:
+    get:
+      tags: [Mosquito detection]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Admin-only coordinates for high-risk reports shown on the risk map }
+        "403": { description: Administrator access required }
   /reports/weather:
     get:
       tags: [Reports]

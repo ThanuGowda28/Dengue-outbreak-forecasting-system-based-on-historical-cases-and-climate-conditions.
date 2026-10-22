@@ -40,6 +40,10 @@ class HealthApiTests(unittest.TestCase):
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
         self.assertEqual(response.headers["X-Frame-Options"], "DENY")
         self.assertEqual(response.headers["Cache-Control"], "no-store")
+        self.assertEqual(
+            response.headers["Permissions-Policy"],
+            "camera=(self), microphone=(self), geolocation=(self)",
+        )
 
     def test_api_not_found_returns_json(self):
         response = self.client.get("/api/not-a-route")

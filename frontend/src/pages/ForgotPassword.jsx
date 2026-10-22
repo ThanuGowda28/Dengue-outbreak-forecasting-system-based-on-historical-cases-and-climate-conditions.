@@ -11,6 +11,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [demoResetUrl, setDemoResetUrl] = useState("");
 
   async function submit(event) {
     event.preventDefault();
@@ -21,10 +22,11 @@ export default function ForgotPassword() {
     setError("");
     setLoading(true);
     try {
-      await requestPasswordReset(email.trim());
+      const response = await requestPasswordReset(email.trim());
+      setDemoResetUrl(response.demo_reset_url || "");
       setSubmitted(true);
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Password recovery is currently unavailable. Please try again later.");
+      setError(requestError.response?.data?.message || requestError.message || "Password recovery is currently unavailable. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -38,10 +40,22 @@ export default function ForgotPassword() {
           <span className="auth-icon"><FiMail /></span>
           <span className="eyebrow">ACCOUNT RECOVERY</span>
           <h1>Forgot your password?</h1>
-          <p>Enter your email address and we’ll email a secure, time-limited reset link.</p>
+          <p>Enter your email address to receive a secure, time-limited reset link.</p>
         </div>
         {submitted ? (
-          <AlertMessage variant="success" message="If an account exists for that email, password reset instructions have been sent." />
+          <>
+            <AlertMessage
+              variant="success"
+              message={demoResetUrl
+                ? "SMTP is unavailable. A one-hour local demo reset link is ready."
+                : "If an account exists for that email, password reset instructions have been sent."}
+            />
+            {demoResetUrl && (
+              <a className="text-link d-block mb-3" href={demoResetUrl}>
+                Open local demo password reset
+              </a>
+            )}
+          </>
         ) : (
           <form onSubmit={submit} noValidate>
             {error && <AlertMessage message={error} />}

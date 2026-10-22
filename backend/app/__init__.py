@@ -2,7 +2,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+project_env = Path(__file__).resolve().parents[2] / ".env"
+backend_env = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(project_env if project_env.is_file() else backend_env)
 
 from datetime import timedelta
 
@@ -12,10 +14,12 @@ from flask_cors import CORS
 from .config import get_config
 from .cli import admin as admin_cli
 from .extensions import bcrypt, db, jwt, migrate
+from .celery_app import init_celery
 from .logging_config import configure_logging
 from .models import TokenBlocklist, User
 from .routes import api_blueprint
 from .services.prediction import initialize_prediction_service
+from .services.detection_model import DetectionModel
 
 
 @jwt.token_in_blocklist_loader
@@ -52,6 +56,13 @@ def create_app(config_object=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object or get_config())
     configure_logging(app)
+    init_celery(app)
+    app.extensions["mosquito_detection_model"] = DetectionModel(
+        app.config.get(
+            "MOSQUITO_DETECTOR_PATH",
+            str(Path(__file__).resolve().parent / "ml" / "models" / "mosquito_detector.pt"),
+        )
+    )
 
     db.init_app(app)
     migrate.init_app(
@@ -79,7 +90,7 @@ def create_app(config_object=None):
 
     app.register_blueprint(api_blueprint, url_prefix="/api")
     app.cli.add_command(admin_cli)
-    if not app.testing:
+    if not app.testing and app.config.get("LOAD_PREDICTION_SERVICE", True):
         prediction_service = initialize_prediction_service(app)
         if app.config.get("REQUIRE_MODEL_AT_STARTUP") and not prediction_service.available:
             raise RuntimeError(
@@ -92,7 +103,10 @@ def create_app(config_object=None):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "camera=(self), microphone=(self), geolocation=(self)",
+        )
         response.headers.setdefault("Cache-Control", "no-store")
         return response
 

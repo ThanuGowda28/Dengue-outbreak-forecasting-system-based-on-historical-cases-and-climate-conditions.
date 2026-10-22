@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from ..extensions import db
 from ..models import PredictionHistory, User
 from ..repositories.prediction_history import delete_prediction, latest_prediction, list_predictions, save_prediction
+from ..services.alert_service import queue_prediction_alerts
 from ..services.prediction import (
     ModelUnavailableError,
     PredictionInputError,
@@ -60,7 +61,7 @@ def _serialize(record: PredictionHistory, include_owner: bool = False) -> dict:
 @jwt_required()
 @rate_limited
 def predict_dengue_risk():
-    user_id, _, failure = _user_context()
+    user_id, user, failure = _user_context()
     if failure:
         return failure
     service = current_app.extensions.get("prediction_service")
@@ -99,6 +100,16 @@ def predict_dengue_risk():
         current_app.logger.exception("Could not persist prediction history")
         return jsonify({"message": "Prediction completed but could not be saved.", "error": "database_error"}), 500
     prediction["id"] = record.id
+    try:
+        prediction["alerts"] = queue_prediction_alerts(user, record)
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Prediction completed but alerts could not be queued for user_id=%s",
+            user_id,
+        )
+        prediction["alerts"] = []
+        prediction["alert_message"] = "Prediction completed, but alert history could not be recorded."
     return jsonify(prediction), 200
 
 

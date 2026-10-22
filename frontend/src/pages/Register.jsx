@@ -67,7 +67,7 @@ export default function Register() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await register({
+      const response = await register({
         ...form,
         full_name: form.full_name.trim(),
         email: form.email.trim(),
@@ -75,6 +75,13 @@ export default function Register() {
         district: form.district.trim(),
         state: form.state.trim()
       });
+      if (response.user?.is_verified) {
+        navigate("/login", {
+          replace: true,
+          state: { notice: response.message }
+        });
+        return;
+      }
       navigate("/verify-email", {
         replace: true,
         state: { email: form.email.trim() }

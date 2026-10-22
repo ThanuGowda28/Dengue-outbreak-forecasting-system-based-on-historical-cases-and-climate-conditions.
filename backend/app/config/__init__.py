@@ -1,10 +1,17 @@
 import os
+from pathlib import Path
 from urllib.parse import urlsplit
 
 from sqlalchemy import URL
 
 
 class BaseConfig:
+    LOCAL_DEMO_MODE = (
+        os.getenv("APP_ENV", os.getenv("FLASK_ENV", "development")).lower()
+        == "development"
+        and os.getenv("LOCAL_DEMO_MODE", "true").strip().lower()
+        in {"1", "true", "yes", "on"}
+    )
     SECRET_KEY = os.getenv("SECRET_KEY", "development-secret-change-me")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "development-jwt-secret-change-me")
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
@@ -24,14 +31,41 @@ class BaseConfig:
     ML_TRAINING_UPLOAD_MAX_BYTES = int(
         os.getenv("ML_TRAINING_UPLOAD_MAX_BYTES", str(30 * 1024 * 1024))
     )
+    MOSQUITO_DETECTOR_PATH = os.getenv(
+        "MOSQUITO_DETECTOR_PATH",
+        str(Path(__file__).resolve().parents[1] / "ml" / "models" / "mosquito_detector.pt"),
+    )
+    MOSQUITO_UPLOAD_DIR = os.getenv("MOSQUITO_UPLOAD_DIR", "")
+    MOSQUITO_MAX_IMAGE_BYTES = 10 * 1024 * 1024
+    HOSPITAL_OVERPASS_URL = os.getenv(
+        "HOSPITAL_OVERPASS_URL", "https://overpass-api.de/api/interpreter"
+    )
+    HOSPITAL_NOMINATIM_URL = os.getenv(
+        "HOSPITAL_NOMINATIM_URL", "https://nominatim.openstreetmap.org"
+    )
+    HOSPITAL_USER_AGENT = os.getenv(
+        "HOSPITAL_USER_AGENT", "DengueWatchHospitalFinder/1.0"
+    )
+    HOSPITAL_PROVIDER_TIMEOUT_SECONDS = int(
+        os.getenv("HOSPITAL_PROVIDER_TIMEOUT_SECONDS", "15")
+    )
     MAIL_SERVER = os.getenv("MAIL_SERVER", "")
     MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
     MAIL_USERNAME = os.getenv("MAIL_USERNAME", "")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
-    MAIL_FROM = os.getenv("MAIL_FROM", "")
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "")
     MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
     MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() == "true"
     MAIL_TIMEOUT_SECONDS = int(os.getenv("MAIL_TIMEOUT_SECONDS", "15"))
+    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    CELERY_RESULT_BACKEND = os.getenv(
+        "CELERY_RESULT_BACKEND",
+        os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
+    )
+    TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+    TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+    TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
+    ALERT_RETRY_DELAY_SECONDS = int(os.getenv("ALERT_RETRY_DELAY_SECONDS", "10"))
     CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = URL.create(
@@ -51,11 +85,13 @@ class DevelopmentConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     TESTING = True
+    LOCAL_DEMO_MODE = False
     SQLALCHEMY_DATABASE_URI = "sqlite://"
 
 
 class ProductionConfig(BaseConfig):
     DEBUG = False
+    LOCAL_DEMO_MODE = False
     REQUIRE_MODEL_AT_STARTUP = True
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
@@ -80,7 +116,13 @@ def get_config():
                 "FRONTEND_ORIGIN",
                 "OPENWEATHER_API_KEY",
                 "MAIL_SERVER",
-                "MAIL_FROM",
+                "MAIL_PORT",
+                "MAIL_USE_TLS",
+                "MAIL_USERNAME",
+                "MAIL_PASSWORD",
+                "MAIL_DEFAULT_SENDER",
+                "CELERY_BROKER_URL",
+                "CELERY_RESULT_BACKEND",
             )
             if not os.getenv(name, "").strip()
         ]
@@ -102,7 +144,11 @@ def get_config():
                 "DB_PASSWORD",
                 "OPENWEATHER_API_KEY",
                 "MAIL_SERVER",
-                "MAIL_FROM",
+                "MAIL_DEFAULT_SENDER",
+                "MAIL_USERNAME",
+                "MAIL_PASSWORD",
+                "CELERY_BROKER_URL",
+                "CELERY_RESULT_BACKEND",
             )
             if os.getenv(name, "").strip().upper().startswith(
                 ("GENERATE-", "SET-", "YOUR-")
@@ -118,17 +164,37 @@ def get_config():
                 "Production requires these environment variables: "
                 + ", ".join(missing)
             )
-        if bool(os.getenv("MAIL_USERNAME")) != bool(os.getenv("MAIL_PASSWORD")):
+        broker_url = os.getenv("CELERY_BROKER_URL", "").strip()
+        if urlsplit(broker_url).scheme not in {"redis", "rediss"}:
             raise RuntimeError(
-                "Production MAIL_USERNAME and MAIL_PASSWORD must either both be "
-                "set or both be empty."
+                "Production CELERY_BROKER_URL must use Redis or TLS Redis (rediss)."
             )
+        result_backend = os.getenv("CELERY_RESULT_BACKEND", broker_url).strip()
+        if urlsplit(result_backend).scheme not in {"redis", "rediss"}:
+            raise RuntimeError(
+                "Production CELERY_RESULT_BACKEND must use Redis or TLS Redis (rediss)."
+            )
+        try:
+            mail_port = int(os.getenv("MAIL_PORT", "587"))
+        except ValueError as error:
+            raise RuntimeError("Production MAIL_PORT must be an integer.") from error
+        if not 1 <= mail_port <= 65535:
+            raise RuntimeError("Production MAIL_PORT must be between 1 and 65535.")
+        mail_use_tls = os.getenv("MAIL_USE_TLS", "true").lower()
+        mail_use_ssl = os.getenv("MAIL_USE_SSL", "false").lower()
+        if mail_use_tls not in {"true", "false"}:
+            raise RuntimeError("Production MAIL_USE_TLS must be true or false.")
+        if mail_use_ssl not in {"true", "false"}:
+            raise RuntimeError("Production MAIL_USE_SSL must be true or false.")
         if (
-            os.getenv("MAIL_USE_TLS", "true").lower() == "true"
-            and os.getenv("MAIL_USE_SSL", "false").lower() == "true"
+            mail_use_tls == "true" and mail_use_ssl == "true"
         ):
             raise RuntimeError(
                 "Production MAIL_USE_TLS and MAIL_USE_SSL cannot both be enabled."
+            )
+        if mail_use_tls != "true" and mail_use_ssl != "true":
+            raise RuntimeError(
+                "Production SMTP must enable MAIL_USE_TLS or MAIL_USE_SSL."
             )
         try:
             db_port = int(os.getenv("DB_PORT", "3306"))

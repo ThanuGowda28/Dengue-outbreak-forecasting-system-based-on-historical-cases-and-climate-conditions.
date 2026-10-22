@@ -1,12 +1,14 @@
 import unittest
 from datetime import datetime, timedelta, timezone
-from unittest.mock import patch
+from io import BytesIO
+from unittest.mock import MagicMock, patch
 
 from flask_jwt_extended import create_access_token
 
 from backend.app import create_app
 from backend.app.extensions import db
 from backend.app.models import User, WeatherHistory
+from backend.app.services.districts import ALL_DISTRICTS
 from backend.app.services.weather_provider import WeatherProvider, WeatherProviderError
 
 
@@ -235,6 +237,52 @@ class WeatherApiTests(unittest.TestCase):
         with self.assertRaises(WeatherProviderError):
             WeatherProvider().current(12.2958, 76.6394)
 
+    def test_provider_logs_success_status_without_logging_api_key(self):
+        response = MagicMock()
+        response.status = 200
+        response.__enter__.return_value = response
+        response.read.return_value = b"[]"
+
+        with self.assertLogs(self.app.name, level="DEBUG") as captured:
+            with patch(
+                "backend.app.services.weather_provider.urlopen",
+                return_value=response,
+            ):
+                payload = WeatherProvider("private-test-key").geocode("Bengaluru")
+
+        output = "\n".join(captured.output)
+        self.assertEqual(payload, [])
+        self.assertIn("status=200", output)
+        self.assertIn(
+            "https://api.openweathermap.org/geo/1.0/direct", output
+        )
+        self.assertNotIn("private-test-key", output)
+
+    def test_provider_logs_http_status_and_error_without_logging_api_key(self):
+        from urllib.error import HTTPError
+
+        unauthorized = HTTPError(
+            "https://api.openweathermap.org/data/2.5/weather?appid=private-test-key",
+            401,
+            "Unauthorized",
+            None,
+            BytesIO(b'{"cod":401,"message":"Invalid API key"}'),
+        )
+
+        with self.assertLogs(self.app.name, level="ERROR") as captured:
+            with patch(
+                "backend.app.services.weather_provider.urlopen",
+                side_effect=unauthorized,
+            ):
+                with self.assertRaises(WeatherProviderError):
+                    WeatherProvider("private-test-key").current(12.3, 77.5)
+
+        output = "\n".join(captured.output)
+        self.assertIn("status=401", output)
+        self.assertIn("error=Invalid API key", output)
+        self.assertIn("https://api.openweathermap.org/data/2.5/weather", output)
+        self.assertNotIn("private-test-key", output)
+
     def test_authenticated_weather_endpoints_integrate_with_provider_and_cache(self):
         history_date = datetime.now(timezone.utc).date() - timedelta(days=1)
         history_key = history_date.strftime("%Y%m%d")
@@ -283,6 +331,7 @@ class WeatherApiTests(unittest.TestCase):
                             "PRECTOTCORR": {history_key: 1.2},
                             "WS2M": {history_key: 2.1},
                             "PS": {history_key: 100.84},
+                            "ALLSKY_SFC_SW_DWN": {history_key: 18.5},
                         }
                     }
                 }
@@ -684,7 +733,7 @@ class WeatherApiTests(unittest.TestCase):
     def test_public_static_district_catalog_and_district_query(self):
         districts = self.client.get("/api/weather/districts")
         self.assertEqual(districts.status_code, 200)
-        self.assertEqual(len(districts.json["districts"]), 31)
+        self.assertEqual(len(districts.json["districts"]), len(ALL_DISTRICTS))
         mysuru = next(
             item for item in districts.json["districts"] if item["district"] == "Mysuru"
         )
@@ -710,6 +759,21 @@ class WeatherApiTests(unittest.TestCase):
         )
         self.assertTrue(
             any(item["name"] == "Mysuru" for item in response.json["locations"])
+        )
+        provider_factory.assert_not_called()
+
+    @patch("backend.app.routes.weather.get_weather_provider")
+    def test_andhra_pradesh_district_search_uses_static_catalog(self, provider_factory):
+        response = self.client.get(
+            "/api/weather/search?q=Andhra%20Pradesh", headers=self._headers()
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json["locations"]), 28)
+        self.assertTrue(
+            all(item["state"] == "Andhra Pradesh" for item in response.json["locations"])
+        )
+        self.assertTrue(
+            any(item["name"] == "Visakhapatnam" for item in response.json["locations"])
         )
         provider_factory.assert_not_called()
 
@@ -829,6 +893,7 @@ class WeatherApiTests(unittest.TestCase):
                     "PRECTOTCORR": {"20260927": 1.2},
                     "WS2M": {"20260927": 2.1},
                     "PS": {"20260927": 100.84},
+                    "ALLSKY_SFC_SW_DWN": {"20260927": 18.5},
                 }
             }
         },
@@ -842,7 +907,9 @@ class WeatherApiTests(unittest.TestCase):
             datetime(2026, 9, 27).date(),
         )
         self.assertEqual(history[0]["pressure_hpa"], 1008.4)
+        self.assertEqual(history[0]["solar_radiation_mj_m2_day"], 18.5)
         self.assertIn("PS", request_json.call_args.args[1]["parameters"])
+        self.assertIn("ALLSKY_SFC_SW_DWN", request_json.call_args.args[1]["parameters"])
 
     @patch("backend.app.routes.weather.get_weather_provider", return_value=FakeWeatherProvider())
     def test_report_filter_and_limits(self, _provider_factory):

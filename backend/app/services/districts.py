@@ -1,0 +1,4 @@
+from .andhra_pradesh_districts import ANDHRA_PRADESH_DISTRICTS
+from .karnataka_districts import KARNATAKA_DISTRICTS
+
+ALL_DISTRICTS = KARNATAKA_DISTRICTS + ANDHRA_PRADESH_DISTRICTS

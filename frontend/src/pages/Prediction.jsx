@@ -7,6 +7,7 @@ import { Pagination, RiskIndicator } from "../components/DashboardComponents.jsx
 import AlertMessage from "../components/AlertMessage.jsx";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import VoiceClimateInput from "../components/VoiceClimateInput.jsx";
+import NearbyHospitalRecommendation from "../components/hospitals/NearbyHospitalRecommendation.jsx";
 
 const thisYear = new Date().getFullYear();
 const emptyFields = { temperature: "", humidity: "", rainfall: "", wind_speed: "", pressure: "", solar_radiation: "", year: String(thisYear) };
@@ -162,6 +163,10 @@ export default function Prediction() {
     <div className="dashboard-page">
       <div className="page-intro"><span className="page-overline">CLIMATE-BASED OUTLOOK</span><h2>Dengue risk classification</h2><p>Submit annual climate summaries to the trained three-network soft-voting ensemble.</p></div>
       {error && <AlertMessage message={error} />}
+      {result?.alerts?.length > 0 && <div className="alert alert-info" role="status">
+        {result.alerts.map((alert) => `${alert.alert_type === "email" ? "Email" : "SMS"} ${alert.status === "failed" ? "failed. Please try again later." : "queued for delivery."}`).join(" ")}
+      </div>}
+      {result?.alert_message && <AlertMessage variant="warning" message={result.alert_message} />}
       {!modelInfo?.available && <AlertMessage variant="warning" message={modelInfo?.message || "The prediction model is not available."} />}
       <div className="row g-4 align-items-start">
         <div className="col-xl-6">
@@ -185,7 +190,7 @@ export default function Prediction() {
           </form>
         </div>
         <div className="col-xl-6">
-          {result ? <PredictionResult prediction={result} /> : <section className="surface-card prediction-result"><div className="result-empty"><span className="result-target"><FiTarget /></span><span className="page-overline">ENSEMBLE SOFT VOTING</span><h2>Prediction result</h2><p>Enter annual climate data and run all three trained neural networks.</p></div></section>}
+          {result ? <PredictionResult prediction={result} district={user?.district} /> : <section className="surface-card prediction-result"><div className="result-empty"><span className="result-target"><FiTarget /></span><span className="page-overline">ENSEMBLE SOFT VOTING</span><h2>Prediction result</h2><p>Enter annual climate data and run all three trained neural networks.</p></div></section>}
         </div>
       </div>
 
@@ -203,6 +208,9 @@ function ClimateInput({ name, label, unit, value, onChange, ...props }) {
   return <><label className="form-label d-flex justify-content-between" htmlFor={`prediction-${name}`}><span>{label}</span><span className="input-unit">{unit}</span></label><input id={`prediction-${name}`} name={name} className="form-control" type="number" step="any" value={value} onChange={onChange} {...props} /></>;
 }
 
-function PredictionResult({ prediction }) {
-  return <section className="surface-card prediction-result"><div className="prediction-result-head"><span className="page-overline">ENSEMBLE RESULT</span><RiskIndicator level={prediction.risk_level} /></div><h2>{prediction.risk_level} Risk</h2><p>{prediction.state} · {new Date(prediction.prediction_time).toLocaleString()}</p><div className="confidence-heading"><strong>Top-class probability (uncalibrated)</strong><strong>{Number(prediction.confidence).toFixed(2)}%</strong></div><div className="progress" role="progressbar" aria-valuenow={prediction.confidence} aria-valuemin="0" aria-valuemax="100"><div className="progress-bar bg-success" style={{ width: `${prediction.confidence}%` }} /></div><h3 className="mt-4">Class probabilities</h3>{Object.entries(prediction.class_probabilities).map(([name, probability]) => <div className="probability-row" key={name}><span>{name}</span><div className="progress"><div className={`progress-bar bg-${name.toLowerCase()}`} style={{ width: `${probability * 100}%` }} /></div><strong>{(probability * 100).toFixed(1)}%</strong></div>)}<h3 className="mt-4">Recommendations</h3><ul className="recommendation-list">{prediction.recommendations.map((item) => <li key={item}>{item}</li>)}</ul><p className="small text-secondary mt-3 mb-0">{prediction.model_warning}</p></section>;
+function PredictionResult({ prediction, district }) {
+  const highRisk = ["high", "very high", "high risk", "very high risk"].includes(
+    String(prediction.risk_level || "").trim().toLowerCase(),
+  );
+  return <section className="surface-card prediction-result"><div className="prediction-result-head"><span className="page-overline">ENSEMBLE RESULT</span><RiskIndicator level={prediction.risk_level} /></div><h2>{prediction.risk_level} Risk</h2><p>{prediction.state} · {new Date(prediction.prediction_time).toLocaleString()}</p><div className="confidence-heading"><strong>Top-class probability (uncalibrated)</strong><strong>{Number(prediction.confidence).toFixed(2)}%</strong></div><div className="progress" role="progressbar" aria-valuenow={prediction.confidence} aria-valuemin="0" aria-valuemax="100"><div className="progress-bar bg-success" style={{ width: `${prediction.confidence}%` }} /></div><h3 className="mt-4">Class probabilities</h3>{Object.entries(prediction.class_probabilities).map(([name, probability]) => <div className="probability-row" key={name}><span>{name}</span><div className="progress"><div className={`progress-bar bg-${name.toLowerCase()}`} style={{ width: `${probability * 100}%` }} /></div><strong>{(probability * 100).toFixed(1)}%</strong></div>)}<h3 className="mt-4">Recommendations</h3><ul className="recommendation-list">{prediction.recommendations.map((item) => <li key={item}>{item}</li>)}</ul><p className="small text-secondary mt-3 mb-0">{prediction.model_warning}</p>{highRisk && <NearbyHospitalRecommendation district={district} state={prediction.state} />}</section>;
 }

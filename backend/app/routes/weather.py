@@ -13,14 +13,14 @@ from ..services.weather import (
     rate_limited,
 )
 from ..services.weather_provider import WeatherProviderError, default_history_range
-from ..services.karnataka_districts import KARNATAKA_DISTRICTS
+from ..services.districts import ALL_DISTRICTS
 
 weather_blueprint = Blueprint("weather", __name__)
 
 
 @weather_blueprint.get("/weather/districts")
 def karnataka_districts():
-    return jsonify({"districts": list(KARNATAKA_DISTRICTS)}), 200
+    return jsonify({"districts": list(ALL_DISTRICTS)}), 200
 
 
 def _weather_location(location):
@@ -78,7 +78,7 @@ def search_locations():
         )
     state_districts = [
         district
-        for district in KARNATAKA_DISTRICTS
+        for district in ALL_DISTRICTS
         if district["state"].casefold() == query.casefold()
     ]
     if state_districts:
@@ -142,6 +142,7 @@ def current_weather():
             {
                 "location": _weather_location(location),
                 "current": current,
+                "last_updated": weather.get("observed_at"),
                 "source": "openweather",
                 "cached": cached,
             }

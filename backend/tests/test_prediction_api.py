@@ -17,6 +17,8 @@ class TestConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     FRONTEND_ORIGIN = "http://localhost:5173"
     WEATHER_RATE_LIMIT_PER_MINUTE = 300
+    CELERY_BROKER_URL = "memory://"
+    CELERY_RESULT_BACKEND = "cache+memory://"
 
 
 class StubPredictionService:

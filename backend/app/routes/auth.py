@@ -3,6 +3,7 @@ import re
 import secrets
 import smtplib
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_jwt_extended import (
@@ -14,12 +15,12 @@ from flask_jwt_extended import (
     jwt_required,
 )
 from flask_jwt_extended.exceptions import JWTExtendedException
-from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy.exc import IntegrityError
 
 from ..extensions import bcrypt, db
 from ..models import (
     EmailVerificationToken,
+    PasswordResetToken,
     TokenBlocklist,
     User,
     UserPreference,
@@ -51,19 +52,7 @@ _PASSWORD_RESET_MAX_AGE_SECONDS = 3600
 _EMAIL_VERIFICATION_MAX_AGE_SECONDS = 24 * 60 * 60
 
 
-def _password_reset_serializer():
-    return URLSafeTimedSerializer(
-        current_app.config["SECRET_KEY"], salt="dengue-password-reset"
-    )
-
-
-def _password_reset_token(user):
-    return _password_reset_serializer().dumps(
-        {"user_id": user.id, "password_hash": user.password_hash}
-    )
-
-
-def _verification_token_hash(token):
+def _token_hash(token):
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
@@ -73,7 +62,7 @@ def _issue_verification_token(user):
     if token_record is None:
         token_record = EmailVerificationToken(user_id=user.id)
         db.session.add(token_record)
-    token_record.token_hash = _verification_token_hash(token)
+    token_record.token_hash = _token_hash(token)
     token_record.expires_at = utcnow() + timedelta(
         seconds=_EMAIL_VERIFICATION_MAX_AGE_SECONDS
     )
@@ -84,7 +73,7 @@ def _issue_verification_token(user):
 def _send_verification_email(user):
     token = _issue_verification_token(user)
     frontend_origin = current_app.config["FRONTEND_ORIGIN"].split(",")[0].strip().rstrip("/")
-    verification_url = f"{frontend_origin}/verify-email?token={token}"
+    verification_url = f"{frontend_origin}/verify-email?token={quote(token, safe='')}"
     send_email(
         user.email,
         "Verify your DengueWatch account",
@@ -117,6 +106,20 @@ def _valid_password(password):
         and any(char.isdigit() for char in password)
         and any(not char.isalnum() for char in password)
     )
+
+
+def _issue_password_reset_token(user):
+    token = secrets.token_urlsafe(32)
+    token_record = PasswordResetToken.query.filter_by(user_id=user.id).first()
+    if token_record is None:
+        token_record = PasswordResetToken(user_id=user.id)
+        db.session.add(token_record)
+    token_record.token_hash = _token_hash(token)
+    token_record.expires_at = utcnow() + timedelta(
+        seconds=_PASSWORD_RESET_MAX_AGE_SECONDS
+    )
+    db.session.commit()
+    return token
 
 
 def _password_fits_bcrypt(password):
@@ -252,6 +255,12 @@ def register():
     if errors:
         return _validation_error(errors)
 
+    mail_configured = email_is_configured()
+    local_demo_mode = bool(current_app.config.get("LOCAL_DEMO_MODE", False))
+    local_demo_auto_verify = local_demo_mode and not mail_configured
+    if not mail_configured and not local_demo_mode:
+        return jsonify({"message": "Account registration email is not configured."}), 503
+
     user = User(
         full_name=full_name.strip(),
         email=normalized_email,
@@ -260,7 +269,7 @@ def register():
         district=data["district"].strip(),
         state=data["state"].strip(),
         role="user",
-        is_verified=False,
+        is_verified=local_demo_auto_verify,
     )
     if User.query.filter_by(email=normalized_email).first() is not None:
         return (
@@ -272,8 +281,6 @@ def register():
             ),
             409,
         )
-    if not email_is_configured():
-        return jsonify({"message": "Account registration email is not configured."}), 503
     db.session.add(user)
     try:
         db.session.commit()
@@ -291,25 +298,46 @@ def register():
             )
         raise
 
-    try:
-        _send_verification_email(user)
-    except (OSError, RuntimeError, smtplib.SMTPException):
-        current_app.logger.exception("Could not send account verification email")
-        return (
-            jsonify(
-                {
-                    "message": "Your account was created, but the verification email could not be sent. Request another verification email to continue.",
-                    "error": "verification_email_failed",
-                    "account_created": True,
-                }
-            ),
-            503,
+    if mail_configured:
+        try:
+            _send_verification_email(user)
+        except (OSError, RuntimeError, smtplib.SMTPException):
+            current_app.logger.exception("Could not send account verification email")
+            if not local_demo_mode:
+                return (
+                    jsonify(
+                        {
+                            "message": "Your account was created, but the verification email could not be sent. Request another verification email to continue.",
+                            "error": "verification_email_failed",
+                            "account_created": True,
+                        }
+                    ),
+                    503,
+                )
+            user.is_verified = True
+            verification_token = EmailVerificationToken.query.filter_by(
+                user_id=user.id
+            ).first()
+            if verification_token is not None:
+                db.session.delete(verification_token)
+            db.session.commit()
+            local_demo_auto_verify = True
+    else:
+        current_app.logger.info(
+            "Email verification skipped for %s because local demo mode is enabled "
+            "and SMTP is not configured.",
+            normalized_email,
         )
 
     return (
         jsonify(
             {
-                "message": "Registration successful. Check your email for a verification link.",
+                "message": (
+                    "Registration successful. Local demo mode verified your account; "
+                    "you can now sign in."
+                    if local_demo_auto_verify
+                    else "Registration successful. Check your email for a verification link."
+                ),
                 "user": _serialize_user(user),
             }
         ),
@@ -329,7 +357,7 @@ def verify_email():
         return jsonify({"message": "Too many requests. Try again later."}), 429
 
     token_record = EmailVerificationToken.query.filter_by(
-        token_hash=_verification_token_hash(token)
+        token_hash=_token_hash(token)
     ).first()
     if token_record is None:
         return jsonify({"message": "Verification link is invalid or has already been used."}), 400
@@ -450,27 +478,58 @@ def request_password_reset():
         return _validation_error({"email": "A valid email address is required."})
     if not public_request_allowed():
         return jsonify({"message": "Too many requests. Try again later."}), 429
-    if not email_is_configured():
+    local_demo_mode = bool(current_app.config.get("LOCAL_DEMO_MODE", False))
+    mail_configured = email_is_configured()
+    if not mail_configured and not local_demo_mode:
         return jsonify({"message": "Password recovery email is not configured."}), 503
 
     user = User.query.filter_by(email=normalized_email).first()
-    token = _password_reset_token(user) if user else _password_reset_serializer().dumps(
-        {"user_id": None, "password_hash": ""}
+    token = (
+        _issue_password_reset_token(user)
+        if user is not None
+        else secrets.token_urlsafe(32)
     )
     reset_url = current_app.config["FRONTEND_ORIGIN"].split(",")[0].strip().rstrip("/")
-    reset_url = f"{reset_url}/reset-password?token={token}"
-    try:
-        send_email(
-            normalized_email,
-            "Password reset request",
-            "A password reset was requested for this address. If an account is "
-            "registered, use the link below within one hour. If you did not request "
-            "this, you can ignore this message.\n\n"
-            f"{reset_url}\n",
+    reset_url = f"{reset_url}/reset-password?token={quote(token, safe='')}"
+    if mail_configured:
+        try:
+            send_email(
+                normalized_email,
+                "Password reset request",
+                "A password reset was requested for this address. If an account is "
+                "registered, use the link below within one hour. If you did not request "
+                "this, you can ignore this message.\n\n"
+                f"{reset_url}\n",
+            )
+        except (OSError, RuntimeError, smtplib.SMTPException):
+            current_app.logger.exception("Could not send password reset email")
+            if not local_demo_mode:
+                return jsonify({"message": "Password recovery email could not be sent."}), 503
+            if user is not None:
+                return jsonify(
+                    {
+                        "message": "Email delivery is unavailable. Use this local demo reset link.",
+                        "demo_reset_url": reset_url,
+                    }
+                ), 202
+            return jsonify(
+                {"message": "If an account exists, password reset instructions are ready."}
+            ), 202
+    elif local_demo_mode and user is not None:
+        current_app.logger.info(
+            "Password reset link generated for local demo account user_id=%s",
+            user.id,
         )
-    except (OSError, RuntimeError, smtplib.SMTPException):
-        current_app.logger.exception("Could not send password reset email")
-        return jsonify({"message": "Password recovery email could not be sent."}), 503
+        return jsonify(
+            {
+                "message": "Email delivery is unavailable. Use this local demo reset link.",
+                "demo_reset_url": reset_url,
+            }
+        ), 202
+    else:
+        current_app.logger.info(
+            "Password reset requested for an unknown address in local demo mode."
+        )
     return jsonify(
         {"message": "If an account exists, password reset instructions have been sent."}
     ), 202
@@ -485,7 +544,7 @@ def reset_password():
     password = data.get("password")
     confirm_password = data.get("confirm_password")
     errors = {}
-    if not isinstance(token, str) or not token:
+    if not isinstance(token, str) or not token or len(token) > 256:
         errors["token"] = "A password reset token is required."
     if not _valid_password(password):
         errors["password"] = (
@@ -497,19 +556,26 @@ def reset_password():
     if errors:
         return _validation_error(errors)
 
-    try:
-        payload = _password_reset_serializer().loads(
-            token, max_age=_PASSWORD_RESET_MAX_AGE_SECONDS
-        )
-    except SignatureExpired:
+    token_record = PasswordResetToken.query.filter_by(
+        token_hash=_token_hash(token)
+    ).first()
+    if token_record is None:
+        return jsonify({"message": "Password reset link is invalid or already used."}), 400
+    expires_at = token_record.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= utcnow():
+        db.session.delete(token_record)
+        db.session.commit()
         return jsonify({"message": "Password reset link has expired."}), 400
-    except BadSignature:
-        return jsonify({"message": "Password reset link is invalid."}), 400
 
-    user = db.session.get(User, payload.get("user_id"))
-    if user is None or payload.get("password_hash") != user.password_hash:
+    user = db.session.get(User, token_record.user_id)
+    if user is None:
+        db.session.delete(token_record)
+        db.session.commit()
         return jsonify({"message": "Password reset link is invalid or already used."}), 400
     user.password_hash = bcrypt.generate_password_hash(password).decode("utf-8")
+    db.session.delete(token_record)
     db.session.commit()
     return jsonify({"message": "Password reset successfully."}), 200
 
@@ -715,5 +781,8 @@ def change_password():
     user.password_hash = bcrypt.generate_password_hash(data["new_password"]).decode(
         "utf-8"
     )
+    pending_reset = PasswordResetToken.query.filter_by(user_id=user.id).first()
+    if pending_reset is not None:
+        db.session.delete(pending_reset)
     db.session.commit()
     return jsonify({"message": "Password changed successfully."}), 200
