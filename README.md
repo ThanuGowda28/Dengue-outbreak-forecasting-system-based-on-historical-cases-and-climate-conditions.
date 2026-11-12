@@ -2,7 +2,7 @@
 
 Starter architecture for the **Ensemble Neural Network Approach to Forecast Dengue Outbreak Based on Climate Conditions** final-year engineering project.
 
-This repository contains a React/Vite frontend and Flask API. The authentication module supports anonymous public visitors, registered users, and administrators. Authenticated weather APIs provide current and forecast conditions from OpenWeather and daily history from NASA POWER. A trained three-network ensemble and its preprocessing artifacts are present and loaded by the prediction API. Its held-out test evaluation is documented as preliminary research evidence, not as validated operational outbreak forecasting.
+This repository contains a React/Vite frontend and Flask API. The authentication module supports anonymous public visitors, registered users, and administrators. Authenticated weather APIs provide current and forecast conditions from OpenWeather and daily history from NASA POWER. A trained three-network ensemble and its preprocessing artifacts are present and loaded by the climate risk assessment API. Its held-out test evaluation is preliminary research evidence, not validated operational outbreak forecasting.
 
 ## Project structure
 
@@ -46,7 +46,7 @@ This repository contains a React/Vite frontend and Flask API. The authentication
 
 - Python 3.10–3.12
 - Node.js 20.19+ (or 22.12+) and npm
-- MySQL 8.0 or newer
+- MySQL 8.0 or newer for a MySQL-backed deployment; SQLite is supported for a local demonstration
 
 TensorFlow and its supported Python versions can vary by operating system. If your platform does not provide a compatible TensorFlow wheel, follow the TensorFlow installation guidance for that platform.
 
@@ -55,11 +55,16 @@ TensorFlow and its supported Python versions can vary by operating system. If yo
 ### 1. Configure environment
 
 From the project root, copy `.env.example` to `.env` and replace the
-placeholder secrets and database credentials. Keep `.env` private and out of
-version control. For production, set `APP_ENV=production` and remove
-`FLASK_DEBUG`; the app requires distinct signing keys of at least 32 characters.
+placeholder secrets. For a local SQLite demonstration, set
+`DATABASE_URL=sqlite:///dengue_local.sqlite`; Flask stores this relative
+database under `backend/instance`. For MySQL, configure the database
+credentials and create the database and application user before starting the
+backend. Keep `.env` private and out of version control. For production, set
+`APP_ENV=production` and remove `FLASK_DEBUG`; the app requires distinct
+signing keys of at least 32 characters.
 
-Create the MySQL database and application user, then grant that user access to the project database. The backend uses `mysql+pymysql` and reads its connection settings from the environment.
+The backend uses SQLite when `DATABASE_URL` is a SQLite URI and
+`mysql+pymysql` for MySQL connections.
 
 ### 2. Start the backend
 
@@ -84,6 +89,9 @@ Apply the checked-in database migrations after installing dependencies:
 flask --app backend.run db upgrade
 ```
 
+The current checked-in migration head is `0012_forecast_history`; the upgrade
+command applies all pending migrations for the configured database.
+
 The migrations create the existing user/token tables and per-user weather
 history table. Weather history stores queryable district, weather date, and
 climate scalar columns alongside the normalized provider payload (so complete
@@ -94,9 +102,10 @@ forecast/history series are retained). For future model changes, create a revisi
 Set `OPENWEATHER_API_KEY` to enable geocoding, current weather, and forecast
 requests. Historical observations use NASA POWER, configured by `NASA_POWER_URL`.
 The development environment example intentionally leaves this credential blank;
-put your own OpenWeather key in `backend/.env` and restart Flask. The weather
-screen reports provider configuration/network errors instead of showing sample
-conditions when the service is unavailable.
+set `OPENWEATHER_API_KEY` in the project-root `.env` and restart Flask. Values
+from `backend/.env` are used as fallbacks for unset or blank root-level
+settings. The weather screen reports provider configuration/network errors
+instead of showing sample conditions when the service is unavailable.
 `WEATHER_CACHE_TTL_SECONDS` controls the process-local provider-response cache
 (default 300 seconds); set it to `0` to disable caching. Authenticated weather
 endpoints are rate-limited per user. Deployments with multiple Flask workers
@@ -158,13 +167,20 @@ Vite serves the frontend at `http://localhost:5173`. The Axios client reads its 
 The public home page includes project information, dengue and climate education,
 FAQs, and a contact form that sends email when configured. The registered-user
 workspace includes live weather, stored weather history, a district location
-map, climate-input predictions, profile, settings, emergency contacts, and
-prescription records. Dashboard alerts and reports use saved, account-scoped
-data. Administrators can manage users and predictions, review system reports
-and climate data, manage isolated dataset uploads, inspect model readiness,
-and launch isolated training jobs. The classifier is available, but its
-case-count labels and small random held-out evaluation do not establish a
-validated future outbreak forecast.
+map, climate risk assessments, profile, settings, emergency contacts, and
+prescription records. The risk map requests district climate history and runs
+the existing ensemble for each supported district; provider or model errors
+are shown instead of substituting sample results. The separate Forecasting
+workspace provides historical trend projections and saved forecast reports;
+these projections are experimental and are not the ensemble model or a
+validated operational forecast. Dashboard alerts and reports use saved,
+account-scoped data. History combines saved forecasts, climate risk
+assessments, alerts, and site detections with search, filters, pagination, CSV,
+and print-to-PDF export. Administrators can manage users and risk assessments, review
+system reports and climate data, manage isolated dataset uploads, inspect model
+readiness, and launch isolated training jobs. The classifier's case-count
+labels and small random held-out evaluation do not establish a validated
+future outbreak forecast.
 
 Dashboard routes require authentication; admin tools are role-gated in the
 client. Weather requests and reports are scoped to the authenticated user. The
@@ -209,16 +225,23 @@ All routes below are prefixed with `http://localhost:5000/api`:
 | GET | `/weather/current?district=...` | Access JWT | Current conditions; accepts district/city/state or lat/lon |
 | GET | `/weather/forecast?city=...&state=...&days=1..5` | Access JWT | Forecast; accepts district/city/state or lat/lon |
 | GET | `/weather/history?district=...&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` | Access JWT | NASA POWER daily history; coordinates are also accepted |
-| GET | `/dashboard` | Access JWT | Personal weather and prediction summary; generated informational alerts for today's Moderate/High saved assessments |
+| GET | `/dashboard` | Access JWT | Personal weather and climate risk assessment summary |
 | GET | `/reports/statistics?district=...&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` | Access JWT | User-scoped weather aggregates and climate trends for the selected inclusive range |
 | GET | `/reports/weather?type=current&district=...&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&limit=50&page=1` | Access JWT | Paginated user-scoped observations filtered by type, district, and inclusive date range |
 | GET | `/admin/reports?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD` | Administrator JWT | System-wide prediction/weather aggregates for the selected range; user count remains all-time |
-| POST | `/prediction/predict` | Access JWT | Annual-climate risk classification using the loaded model |
-| GET | `/prediction/history?page=1&per_page=10` | Access JWT | Paginated saved results; users see their own records and admins can view all |
-| DELETE | `/prediction/history/{id}` | Access JWT | Delete own result or any result as admin |
-| GET | `/prediction/latest` | Access JWT | Latest saved result for the signed-in user; admins see the latest overall |
-| GET | `/prediction/model-info` | Access JWT | Model artifact availability and expected input units |
-| POST | `/alerts/send` | Access JWT | Queue eligible email/SMS alerts for one of the signed-in user's saved predictions |
+| POST | `/prediction/predict` | Access JWT | Annual-climate risk assessment using the loaded ensemble |
+| GET | `/prediction/history?page=1&per_page=10` | Access JWT | Paginated saved risk assessments; admins can view all |
+| DELETE | `/prediction/history/{id}` | Access JWT | Delete own assessment or any assessment as admin |
+| GET | `/prediction/latest` | Access JWT | Latest saved climate risk assessment |
+| GET | `/prediction/model-info` | Access JWT | Model input units and availability |
+| GET | `/risk-map` | Access JWT | District risk scores from rolling-year climate inputs and the existing ensemble |
+| GET | `/forecast/options` | Access JWT | Available states, districts, historical years, and forecast years |
+| GET | `/forecast/trends?state=...&years=5|10` | Access JWT | Historical annual climate trends for a supported state |
+| POST | `/forecast` | Access JWT | Generate and save an experimental annual trend projection |
+| GET | `/forecast/history?page=1&per_page=20` | Access JWT | Paginated saved forecasts for the signed-in user |
+| GET | `/forecast/map?year=...` | Access JWT | State-level projection map data for a forecast year |
+| GET | `/forecast/history/{id}/report.pdf` | Access JWT | Download a saved forecast report |
+| POST | `/alerts/send` | Access JWT | Queue eligible email/SMS alerts for one of the signed-in user's saved climate risk assessments |
 | GET | `/alerts/history` | Access JWT | Paginated alert history scoped to the signed-in user |
 | GET/PUT | `/alerts/settings` | Access JWT | Read or update email, opted-in SMS, daily-summary, high-risk, and weather alert preferences |
 | GET | `/alerts/admin/history` | Admin JWT | Search/filter system alert history |
@@ -242,7 +265,7 @@ All routes below are prefixed with `http://localhost:5000/api`:
 | GET | `/admin/model-training/{job_id}` | Admin JWT | Inspect training job status |
 
 The retired `/prediction` compatibility route returns `410 Gone`; use
-`/prediction/predict` and `/prediction/history`.
+`/prediction/predict` and `/prediction/history` for climate risk assessments.
 
 Weather current, forecast, and history responses use a common location object
 (`district`, `city`, `state`, `latitude`, `longitude`), a `source`, a `cached`
@@ -515,7 +538,7 @@ python -m unittest backend.tests.test_ml_preprocessing backend.tests.test_ml_eva
 ```
 
 
-## Flask prediction integration
+## Flask climate risk assessment integration
 
 The Flask application factory initializes one `PredictionService` per app at
 startup. It loads `models/ensemble_model.keras`, `models/scaler.pkl`, and
@@ -561,7 +584,7 @@ it is a research classifier, not a validated future outbreak forecast or medical
 advice. The response includes `risk_level`, confidence percent, probabilities
 for each class, recommendations, and UTC prediction time.
 
-The React Prediction page calls these APIs, allows editing, displays class
+The React Climate Risk Assessment page calls these APIs, allows editing, displays class
 probabilities/confidence and saved history, supports search/pagination/CSV
 export, and shows an annual-data caveat. The Dashboard consumes the API's latest
 prediction, same-day risk, total count, and risk distribution.

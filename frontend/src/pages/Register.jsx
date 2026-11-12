@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiUserPlus } from "react-icons/fi";
+import { ArrowLeft, UserRoundPlus } from "lucide-react";
 import AlertMessage from "../components/AlertMessage.jsx";
+import AuthStory from "../components/AuthStory.jsx";
 import FormInput from "../components/FormInput.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiError, EMAIL_PATTERN, passwordError, PHONE_PATTERN } from "../utils/authValidation.js";
@@ -98,33 +99,55 @@ export default function Register() {
     }
   }
 
+  const passwordStrength = [
+    form.password.length >= 8,
+    /[A-Z]/.test(form.password),
+    /[a-z]/.test(form.password),
+    /\d/.test(form.password),
+    /[^A-Za-z0-9]/.test(form.password)
+  ].filter(Boolean).length;
+  const strengthLabel = passwordStrength < 2
+    ? "Add more character variety"
+    : passwordStrength < 4
+      ? "Getting stronger"
+      : "Strong password";
+
   return (
     <main className="auth-page container">
-      <section className="auth-card auth-card-wide">
-        <Link className="back-link" to="/"><FiArrowLeft /> Back to home</Link>
-        <div className="auth-heading">
-          <span className="auth-icon"><FiUserPlus /></span>
-          <span className="eyebrow">JOIN THE COMMUNITY</span>
-          <h1>Create your account</h1>
-          <p>Get access to DengueWatch community insights.</p>
-        </div>
-        <AlertMessage message={requestError?.message} errors={requestError?.errors && typeof requestError.errors !== "object" ? requestError.errors : null} />
-        {requestError?.accountCreated && <Link className="text-link d-block mb-3" to="/verify-email" state={{ email: form.email.trim() }}>Continue to request another verification email</Link>}
-        <form onSubmit={submit} noValidate>
-          <FormInput label="Full name" name="full_name" autoComplete="name" value={form.full_name} onChange={update} error={errors.full_name} required />
-          <FormInput label="Email address" name="email" type="email" autoComplete="email" value={form.email} onChange={update} error={errors.email} required />
-          <FormInput label="Phone number" name="phone" type="tel" autoComplete="tel" value={form.phone} onChange={update} error={errors.phone} hint="Include your country code if needed." required />
-          <FormInput label="District" name="district" autoComplete="address-level2" value={form.district} onChange={update} error={errors.district} required />
-          <FormInput label="State" name="state" autoComplete="address-level1" value={form.state} onChange={update} error={errors.state} required />
-          <FormInput label="Password" name="password" type="password" autoComplete="new-password" value={form.password} onChange={update} error={errors.password} hint="At least 8 characters with uppercase, lowercase, number and symbol." required />
-          <FormInput label="Confirm password" name="confirm_password" type="password" autoComplete="new-password" value={form.confirm_password} onChange={update} error={errors.confirm_password} required />
-          <button className="btn btn-primary w-100 btn-lg mt-2" type="submit" disabled={submitting}>
-            {submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}
-            {submitting ? "Creating account…" : "Create account"}
-          </button>
-        </form>
-        <p className="auth-switch">Already have an account? <Link to="/login">Sign in</Link></p>
-      </section>
+      <div className="auth-layout auth-layout-register">
+        <AuthStory variant="register" />
+        <section className="auth-card auth-card-wide">
+          <Link className="back-link" to="/"><ArrowLeft size={16} /> Back to home</Link>
+          <div className="auth-heading">
+            <span className="auth-icon"><UserRoundPlus size={21} /></span>
+            <span className="eyebrow">JOIN THE COMMUNITY</span>
+            <h1>Create your account</h1>
+            <p>Get access to DengueWatch community insights.</p>
+          </div>
+          <AlertMessage message={requestError?.message} errors={requestError?.errors && typeof requestError.errors !== "object" ? requestError.errors : null} />
+          {requestError?.accountCreated && <Link className="text-link d-block mb-3" to="/verify-email" state={{ email: form.email.trim() }}>Continue to request another verification email</Link>}
+          <form onSubmit={submit} noValidate>
+            <FormInput label="Full name" name="full_name" autoComplete="name" value={form.full_name} onChange={update} error={errors.full_name} required />
+            <FormInput label="Email address" name="email" type="email" autoComplete="email" value={form.email} onChange={update} error={errors.email} required />
+            <FormInput label="Phone number" name="phone" type="tel" autoComplete="tel" value={form.phone} onChange={update} error={errors.phone} hint="Include your country code if needed." required />
+            <FormInput label="District" name="district" autoComplete="address-level2" value={form.district} onChange={update} error={errors.district} required />
+            <FormInput label="State" name="state" autoComplete="address-level1" value={form.state} onChange={update} error={errors.state} required />
+            <FormInput label="Password" name="password" type="password" autoComplete="new-password" value={form.password} onChange={update} error={errors.password} hint="At least 8 characters with uppercase, lowercase, number and symbol." showPasswordToggle required />
+            <div className="password-strength" aria-live="polite">
+              <span className="password-strength-label">{form.password ? strengthLabel : "Password strength"}</span>
+              <span className="password-strength-meter" role="progressbar" aria-label="Password strength" aria-valuemin={0} aria-valuemax={5} aria-valuenow={passwordStrength}>
+                {[1, 2, 3, 4, 5].map((level) => <i className={passwordStrength >= level ? "active" : ""} key={level} />)}
+              </span>
+            </div>
+            <FormInput label="Confirm password" name="confirm_password" type="password" autoComplete="new-password" value={form.confirm_password} onChange={update} error={errors.confirm_password} showPasswordToggle required />
+            <button className="btn btn-primary w-100 btn-lg mt-2" type="submit" disabled={submitting}>
+              {submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}
+              {submitting ? "Creating account…" : "Create account"}
+            </button>
+          </form>
+          <p className="auth-switch">Already have an account? <Link to="/login">Sign in</Link></p>
+        </section>
+      </div>
     </main>
   );
 }

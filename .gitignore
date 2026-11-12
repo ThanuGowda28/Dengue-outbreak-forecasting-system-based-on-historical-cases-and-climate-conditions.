@@ -18,6 +18,8 @@ env/
 htmlcov/
 
 # Flask instance data and uploads
+instance/*
+!instance/.gitkeep
 backend/instance/*
 !backend/instance/.gitkeep
 backend/app/uploads/*

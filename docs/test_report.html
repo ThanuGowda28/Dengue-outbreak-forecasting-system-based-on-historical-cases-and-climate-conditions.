@@ -24,12 +24,12 @@
 <main>
   <header>
     <h1>Final Validation Test Report</h1>
-    <p>Scope: project source and locally available dependencies. This report records reproducible checks, not a production certification. The older test and migration results in this report have been superseded by the final audit dated 2026-10-13.</p>
+    <p>Verification snapshot dated 2026-11-05. Results cover the local test environment and are not a production certification. Live MySQL CRUD, authenticated browser workflows, and external weather-provider behavior were not verified in this run.</p>
     <div class="grid">
-      <div class="metric"><strong>70 / 70</strong>Backend unittest cases passed</div>
-      <div class="metric"><strong>12 / 12</strong>Frontend Node tests passed</div>
+      <div class="metric"><strong>124 / 124</strong>Backend unittest cases passed</div>
+      <div class="metric"><strong>17 / 17</strong>Frontend Node tests passed</div>
       <div class="metric"><strong>PASS</strong>Vite production build</div>
-      <div class="metric"><strong>0007</strong>Database migration head</div>
+      <div class="metric"><strong>0012</strong>Migration revision reported by Flask CLI</div>
     </div>
   </header>
   <section>
@@ -38,11 +38,12 @@
       <thead><tr><th>Check</th><th>Result</th><th>Evidence / scope</th></tr></thead>
       <tbody>
         <tr><td>Python compilation</td><td>PASS</td><td><code>python -m compileall -q backend scrape_ncvbdc_dengue.py</code></td></tr>
-        <tr><td>Backend tests</td><td>PASS — 70 tests</td><td>Final audit run: <code>python -m unittest discover -s backend\tests -v</code>. Test providers and API database operations are isolated/mocked where appropriate.</td></tr>
-        <tr><td>Frontend tests</td><td>PASS — 12 tests</td><td>Node built-in test runner.</td></tr>
+        <tr><td>Backend tests</td><td>PASS — 124 tests</td><td>Run: <code>python -m unittest discover -s backend\tests -v</code>. Provider integrations are mocked and API database operations use isolated test databases where appropriate.</td></tr>
+        <tr><td>Frontend tests</td><td>PASS — 17 tests</td><td>Node built-in test runner, including unified history timeline and CSV export coverage.</td></tr>
         <tr><td>Frontend production build</td><td>PASS</td><td>Vite production build completed successfully; page and chart/map chunks are split.</td></tr>
         <tr><td>Coverage</td><td>Historical snapshot only</td><td>The older 52% backend app coverage result is not a current coverage measurement. Detailed historical report: <a href="./coverage/index.html">coverage/index.html</a>.</td></tr>
-        <tr><td>Migration metadata</td><td>PASS — current head applied</td><td>Configured MySQL is at <code>0007_email_verification_tokens</code>; the verification token table was confirmed.</td></tr>
+        <tr><td>Migration metadata</td><td>PASS — revision reported as <code>0012_forecast_history</code></td><td>Verified with <code>flask --app backend.run db current</code>. This check does not establish that the database is MySQL or prove live-MySQL CRUD.</td></tr>
+        <tr><td>Local service smoke checks</td><td>PARTIAL</td><td>The public frontend loaded and the backend liveness endpoint returned <code>status: ok</code>. Authenticated browser flows and a browser-to-live-database journey were not run.</td></tr>
       </tbody>
     </table>
   </section>
@@ -60,14 +61,14 @@
     <h2>Not verified / release blockers</h2>
     <div class="note">
       <ul>
-        <li>Live MySQL CRUD, schema rollback, and restore were not run. Migration head/table verification succeeded.</li>
-        <li>Live OpenWeather/NASA POWER health and endpoint smoke checks succeeded; extended provider quota/load behavior was not tested.</li>
-        <li>Docker/Compose build was not run because Docker is unavailable in the validation environment.</li>
+        <li>Live MySQL CRUD, schema rollback, and restore were not run. The current Alembic revision was read from the Flask CLI, but the configured database engine was not independently verified in this run.</li>
+        <li>Live OpenWeather/NASA POWER requests were not verified in this run; provider behavior is covered by mocked tests.</li>
+        <li>Docker/Compose build was not run in this verification pass.</li>
         <li>The saved ensemble loads and inference/evaluation tests pass, but the small random held-out set is not temporal or external validation and does not support an operational outbreak-forecast claim.</li>
-        <li>Production deployment, SMTP credentials, extended abuse/load controls, and the full authenticated browser-to-MySQL journey still require environment-specific verification.</li>
+        <li>Production deployment, SMTP credentials, extended abuse/load controls, and the full authenticated browser-to-database journey still require environment-specific verification.</li>
       </ul>
     </div>
-    <p><strong>Deployment note:</strong> Docker/Compose build was not run because Docker was unavailable in the validation environment.</p>
+    <p><strong>Deployment note:</strong> Docker/Compose build was not run in this verification pass.</p>
   </section>
   <section>
     <h2>Reproduction commands</h2>

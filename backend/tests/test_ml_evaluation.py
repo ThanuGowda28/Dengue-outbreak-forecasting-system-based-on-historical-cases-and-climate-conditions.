@@ -37,6 +37,15 @@ class ModelEvaluationTests(unittest.TestCase):
         self.assertEqual(metrics["roc_auc_ovr_macro"], 1.0)
 
     def test_saved_ensemble_evaluation_is_reproducible_and_writes_reports(self):
+        try:
+            import tensorflow  # noqa: F401
+        except ImportError as error:
+            if "Application Control policy has blocked this file" in str(error):
+                self.skipTest(
+                    "TensorFlow native components are blocked by Windows Application Control."
+                )
+            raise
+
         with tempfile.TemporaryDirectory() as temp_directory:
             output = Path(temp_directory)
             report = evaluate_saved_model(

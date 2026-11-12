@@ -6,7 +6,12 @@ from flask_jwt_extended import create_access_token
 from backend.app import create_app
 from backend.app.extensions import db
 from backend.app.models import PredictionHistory, User, UserPreference
-from backend.app.services.prediction import PredictionInputError
+from backend.app.services.prediction import PredictionInputError, PredictionService
+
+
+class IdentityScaler:
+    def transform(self, values):
+        return values.to_numpy()
 
 
 class TestConfig:
@@ -80,7 +85,7 @@ class PredictionApiTests(unittest.TestCase):
 
     @staticmethod
     def _payload():
-        return {"state": "Karnataka", "temperature": 25.4, "humidity": 68.2, "rainfall": 1250, "wind_speed": 2.8, "pressure": 1008.6, "solar_radiation": 18.2, "year": 2025}
+        return {"state": "Karnataka", "temperature": 25.4, "humidity": 68.2, "rainfall": 1250, "wind_speed": 2.8, "pressure": 1008.6, "solar_radiation": 18.2, "year": 2026}
 
     def test_prediction_is_persisted_and_returned(self):
         response = self.client.post("/api/prediction/predict", json=self._payload(), headers=self.user_headers)
@@ -88,6 +93,50 @@ class PredictionApiTests(unittest.TestCase):
         self.assertEqual(response.json["risk_level"], "High")
         self.assertEqual(response.json["class_probabilities"]["High"], 0.9)
         self.assertEqual(PredictionHistory.query.count(), 1)
+
+    def test_2026_prediction_is_returned_and_saved_to_history(self):
+        response = self.client.post(
+            "/api/prediction/predict",
+            json={**self._payload(), "year": 2026},
+            headers=self.user_headers,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json["input"]["year"], 2026)
+
+        history = self.client.get(
+            "/api/prediction/history",
+            headers=self.user_headers,
+        )
+        self.assertEqual(history.status_code, 200)
+        self.assertEqual(history.json["items"][0]["year"], 2026)
+
+    def test_prediction_year_validation_covers_2026_through_2030(self):
+        service = PredictionService(".", ".")
+        service.feature_columns = ["year", "average_temperature_c", "state_ut_Karnataka"]
+        service.scaler_columns = ["average_temperature_c"]
+        service.scaler = IdentityScaler()
+        payload = {
+            "state": "Karnataka",
+            "temperature": 25.4,
+            "humidity": 68.2,
+            "rainfall": 1250,
+            "wind_speed": 2.8,
+            "pressure": 1008.6,
+            "solar_radiation": 18.2,
+            "year": 2026,
+        }
+
+        for year in (2026, 2027, 2030):
+            with self.subTest(year=year):
+                values, _ = service.validate_and_build_features(
+                    {**payload, "year": year}
+                )
+                self.assertEqual(values["year"], year)
+
+        for year in (2025, 2031):
+            with self.subTest(year=year):
+                with self.assertRaises(PredictionInputError):
+                    service.validate_and_build_features({**payload, "year": year})
 
     def test_missing_input_and_unauthorized_requests_are_rejected(self):
         self.assertEqual(self.client.post("/api/prediction/predict", json={}, headers=self.user_headers).status_code, 400)

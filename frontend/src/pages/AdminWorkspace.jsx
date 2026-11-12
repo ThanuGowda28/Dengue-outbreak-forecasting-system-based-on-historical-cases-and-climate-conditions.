@@ -6,7 +6,6 @@ import { EmptyState } from "../components/DashboardComponents.jsx";
 import {
   getAdminClimateData,
   getAdminDatasets,
-  getAdminModelStatus,
   uploadAdminDataset,
   deleteAdminDataset,
   startAdminModelTraining,
@@ -73,7 +72,7 @@ function DatasetPage() {
   }
   return (
     <div className="dashboard-page">
-      <div className="page-intro"><span className="page-overline">ADMINISTRATION</span><h2>Dataset management</h2><p>Review available datasets and manage isolated CSV uploads. Model and preprocessing artifacts are not accepted as uploads.</p></div>
+      <div className="page-intro"><span className="page-overline">ADMINISTRATION</span><h2>Research data</h2><p>Manage separate CSV data uploads for project review.</p></div>
       {error && <AlertMessage message={error} />}
       {actionError && <AlertMessage message={actionError} />}
       <form className="surface-card mb-3" onSubmit={upload}>
@@ -82,13 +81,13 @@ function DatasetPage() {
           <input id="admin-dataset-file" className="form-control" type="file" accept=".csv,text/csv" onChange={(event) => setFile(event.target.files?.[0] || null)} disabled={busy} />
           <button className="btn btn-primary" type="submit" disabled={busy || !file}><FiUpload className="me-1" />{busy ? "Working…" : "Upload CSV"}</button>
         </div>
-        <p className="small text-secondary mt-2 mb-0">Uploads are stored separately; they do not replace production datasets or model files.</p>
+        <p className="small text-secondary mt-2 mb-0">New uploads are kept separate from the data already used by the application.</p>
       </form>
       {loading ? <p role="status">Loading dataset inventory…</p> : datasets.length === 0 ? <EmptyState icon={FiDatabase} title="No dataset files found" description="No supported CSV or preprocessing files are present in the configured dataset directory." /> : (
         <section className="surface-card">
-          <div className="surface-heading"><h3 className="h5">Available files</h3><span>{data.total_items} files</span></div>
-          <div className="table-responsive"><table className="table align-middle"><thead><tr><th>File</th><th>Category</th><th>Relative path</th><th>Size</th><th>Last updated</th><th>Actions</th></tr></thead><tbody>
-            {datasets.map((item) => <tr key={item.relative_path}><td>{item.name}</td><td>{item.category}</td><td><code>{item.relative_path}</code></td><td>{formatBytes(item.size_bytes)}</td><td>{formatDate(item.updated_at)}</td><td>{item.category === "uploads" && <button className="btn btn-outline-danger btn-sm" type="button" disabled={busy} onClick={() => remove(item.relative_path)} aria-label={`Delete ${item.name}`}><FiTrash2 /></button>}</td></tr>)}
+          <div className="surface-heading"><h3 className="h5">Research data entries</h3><span>{data.total_items} entries</span></div>
+          <div className="table-responsive"><table className="table align-middle"><thead><tr><th>Collection</th><th>Size</th><th>Last updated</th><th>Actions</th></tr></thead><tbody>
+            {datasets.map((item) => <tr key={item.relative_path}><td>Project data</td><td>{formatBytes(item.size_bytes)}</td><td>{formatDate(item.updated_at)}</td><td>{item.category === "uploads" && <button className="btn btn-outline-danger btn-sm" type="button" disabled={busy} onClick={() => remove(item.relative_path)} aria-label="Remove uploaded data"><FiTrash2 /></button>}</td></tr>)}
           </tbody></table></div>
         </section>
       )}
@@ -118,14 +117,14 @@ function ClimatePage() {
       {error && <AlertMessage message={error} />}
       <section className="surface-card mb-3"><div className="row g-3">
         <div className="col-md-4"><label className="form-label" htmlFor="admin-climate-district">District</label><input id="admin-climate-district" className="form-control" name="district" value={filters.district} onChange={updateFilter} placeholder="Filter district" /></div>
-        <div className="col-md-4"><label className="form-label" htmlFor="admin-climate-provider">Provider</label><select id="admin-climate-provider" className="form-select" name="provider" value={filters.provider} onChange={updateFilter}><option value="">All providers</option><option value="openweather">OpenWeather</option><option value="nasa_power">NASA POWER</option></select></div>
+        <div className="col-md-4"><label className="form-label" htmlFor="admin-climate-provider">Observation type</label><select id="admin-climate-provider" className="form-select" name="provider" value={filters.provider} onChange={updateFilter}><option value="">All observations</option><option value="openweather">Current weather</option><option value="nasa_power">Historical climate</option></select></div>
         <div className="col-md-4"><label className="form-label" htmlFor="admin-climate-type">Record type</label><select id="admin-climate-type" className="form-select" name="record_type" value={filters.record_type} onChange={updateFilter}><option value="">All types</option><option value="current">Current</option><option value="forecast">Forecast</option><option value="history">History</option></select></div>
       </div></section>
       <section className="surface-card">
         <div className="surface-heading"><h3 className="h5">Climate records</h3><span>{pagination?.total_items ?? 0} total</span></div>
         {loading ? <p role="status">Loading climate data…</p> : records.length === 0 ? <EmptyState icon={FiDatabase} title="No climate records" description="No stored climate observations match these filters." /> : (
-          <div className="table-responsive"><table className="table align-middle"><thead><tr><th>Location</th><th>District</th><th>Type</th><th>Provider</th><th>Temp.</th><th>Humidity</th><th>Rainfall</th><th>Observed</th></tr></thead><tbody>
-            {records.map((row) => <tr key={row.id}><td>{row.location_name}</td><td>{row.district || "—"}</td><td>{row.record_type}</td><td>{row.provider}</td><td>{formatMeasurement(row.temperature, "°C")}</td><td>{formatMeasurement(row.humidity, "%")}</td><td>{formatMeasurement(row.rainfall, " mm")}</td><td>{formatDate(row.observed_at)}</td></tr>)}
+          <div className="table-responsive"><table className="table align-middle"><thead><tr><th>Location</th><th>District</th><th>Type</th><th>Observation type</th><th>Temp.</th><th>Humidity</th><th>Rainfall</th><th>Observed</th></tr></thead><tbody>
+            {records.map((row) => <tr key={row.id}><td>{row.location_name}</td><td>{row.district || "—"}</td><td>{row.record_type}</td><td>{row.provider === "openweather" ? "Current weather" : "Historical climate"}</td><td>{formatMeasurement(row.temperature, "°C")}</td><td>{formatMeasurement(row.humidity, "%")}</td><td>{formatMeasurement(row.rainfall, " mm")}</td><td>{formatDate(row.observed_at)}</td></tr>)}
           </tbody></table></div>
         )}
         {pagination && pagination.total_pages > 1 && <div className="d-flex align-items-center justify-content-between mt-3"><span>Page {pagination.page} of {pagination.total_pages}</span><div className="d-flex gap-2"><button className="btn btn-outline-primary btn-sm" type="button" disabled={!pagination.has_previous || loading} onClick={() => setPage((current) => current - 1)}>Previous</button><button className="btn btn-outline-primary btn-sm" type="button" disabled={!pagination.has_next || loading} onClick={() => setPage((current) => current + 1)}>Next</button></div></div>}
@@ -135,7 +134,6 @@ function ClimatePage() {
 }
 
 function ModelPage() {
-  const { data, error, loading } = useLoad(getAdminModelStatus, []);
   const [job, setJob] = useState(null);
   const [trainingError, setTrainingError] = useState("");
   const [starting, setStarting] = useState(false);
@@ -149,7 +147,7 @@ function ModelPage() {
         const nextJob = await getAdminModelTraining(job.id);
         if (active) setJob(nextJob);
       } catch (requestError) {
-        if (active) setTrainingError(requestError.response?.data?.message || "Training status could not be loaded.");
+        if (active) setTrainingError("The research run status could not be loaded. Please try again later.");
       }
     }, 2000);
     return () => {
@@ -162,30 +160,30 @@ function ModelPage() {
     setTrainingError("");
     try {
       setJob(await startAdminModelTraining());
-    } catch (requestError) {
-      setTrainingError(requestError.response?.data?.message || "Training could not be started.");
-      if (requestError.response?.data?.job) setJob(requestError.response.data.job);
+    } catch {
+      setTrainingError("The research run could not be started. Please try again later.");
     } finally {
       setStarting(false);
     }
   }
-  const artifacts = data?.artifacts || [];
   return (
     <div className="dashboard-page">
-      <div className="page-intro"><span className="page-overline">ADMINISTRATION</span><h2>Model training workspace</h2><p>Run the existing training pipeline against configured processed datasets. Training artifacts are isolated and do not replace the active inference model.</p></div>
-      {error && <AlertMessage message={error} />}
+      <div className="page-intro"><span className="page-overline">ADMINISTRATION</span><h2>Research workflow</h2><p>Run a research refresh using the prepared project data. Results are staged and do not change the forecasts currently available in the application.</p></div>
       {trainingError && <AlertMessage message={trainingError} />}
-      {loading ? <p role="status">Checking model artifacts…</p> : <>
-        <section className="surface-card mb-3"><h3 className="h5">Inference readiness</h3><p className={data.inference_artifacts_present ? "text-success mb-1" : "text-danger mb-1"}>{data.inference_artifacts_present ? "Required files are present" : "Required files are missing"}</p><p className="text-secondary mb-1">Runtime model load verified: {data.runtime_load_verified ? "Yes" : "No"}</p><p className="text-secondary mb-3">Training job available: {data.training_job_available ? "Yes" : "No — processed train.csv and test.csv are required"}</p><button className="btn btn-primary" type="button" onClick={startTraining} disabled={!data.training_job_available || starting || job?.status === "running"}>{starting ? "Starting…" : job?.status === "running" ? "Training in progress…" : "Start isolated training run"}</button></section>
-        {job && <section className="surface-card mb-3"><h3 className="h5">Training run: {job.status}</h3><p className="small text-secondary">Started {formatDate(job.started_at)} · {job.output_is_staged ? "Results are staged and have not changed the active model." : "The active model remains unchanged while training."}</p>{job.error && <AlertMessage message={job.error} />}{job.metrics && <pre className="small overflow-auto">{JSON.stringify({ ensemble_accuracy: job.metrics.ensemble_accuracy, ensemble_f1_macro: job.metrics.ensemble_f1_macro, dataset_summary: job.metrics.dataset_summary }, null, 2)}</pre>}<pre className="small overflow-auto mb-0" aria-label="Training output">{job.log || "Waiting for training output…"}</pre></section>}
-        <section className="surface-card">
-          <div className="surface-heading"><h3 className="h5">Artifacts</h3><FiTarget aria-hidden="true" /></div>
-          <div className="table-responsive"><table className="table align-middle"><thead><tr><th>Artifact</th><th>Availability</th><th>Required for inference</th><th>Size</th><th>Last updated</th></tr></thead><tbody>
-            {artifacts.map((item) => <tr key={item.name}><td>{item.name}</td><td>{item.available ? "Available" : "Missing"}</td><td>{item.required_for_inference ? "Yes" : "No"}</td><td>{item.available ? formatBytes(item.size_bytes) : "—"}</td><td>{item.available ? formatDate(item.updated_at) : "—"}</td></tr>)}
-          </tbody></table></div>
+      <>
+        <section className="surface-card mb-3">
+          <h3 className="h5">Research refresh</h3>
+          <p>Start a new background research run. It will not replace the forecasts currently available in the application.</p>
+          <button className="btn btn-primary" type="button" onClick={startTraining} disabled={starting || job?.status === "running"}>
+            {starting ? "Starting…" : job?.status === "running" ? "In progress…" : "Start research refresh"}
+          </button>
         </section>
-      </>}
-      <p className="demo-disclaimer">Training runs require TensorFlow and the configured processed datasets. Results are staged for review and are not automatically deployed.</p>
+        {job && <section className="surface-card mb-3" role="status">
+          <h3 className="h5">Research run {job.status === "running" ? "in progress" : job.status === "completed" ? "complete" : "needs attention"}</h3>
+          <p className="mb-0">{job.status === "running" ? "This may take a few minutes. You can return later to check again." : job.status === "completed" ? "The latest research results are staged for review." : "The research run could not be completed. Please try again later."}</p>
+        </section>}
+      </>
+      <p className="demo-disclaimer">Research refreshes are staged for review and do not automatically change the application.</p>
     </div>
   );
 }

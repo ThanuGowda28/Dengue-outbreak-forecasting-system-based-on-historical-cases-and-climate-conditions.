@@ -18,7 +18,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -30,9 +29,11 @@ from sklearn.metrics import (
     roc_curve,
 )
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from tensorflow import keras
 
-from .training import MODEL_DIR, PROCESSED_DIR, TEST_CSV, load_processed_data
+ML_DIR = Path(__file__).resolve().parent
+PROCESSED_DIR = ML_DIR / "dataset" / "processed"
+MODEL_DIR = ML_DIR / "models"
+TEST_CSV = PROCESSED_DIR / "test.csv"
 
 
 def _sha256(path: Path) -> str:
@@ -50,7 +51,7 @@ def _probability_digest(probabilities: np.ndarray) -> str:
 
 
 def _validate_artifacts(
-    model: keras.Model,
+    model: Any,
     features: np.ndarray,
     feature_columns: list[str],
     label_encoder: LabelEncoder,
@@ -81,7 +82,7 @@ def _validate_artifacts(
     return scaled_columns
 
 
-def _predict(model: keras.Model, features: np.ndarray) -> np.ndarray:
+def _predict(model: Any, features: np.ndarray) -> np.ndarray:
     probabilities = np.asarray(model.predict(features, verbose=0), dtype=np.float64)
     if probabilities.ndim != 2 or probabilities.shape[0] != len(features):
         raise ValueError("Model returned probabilities with an unexpected shape.")
@@ -290,6 +291,11 @@ def evaluate_saved_model(
     output_dir: str | Path = MODEL_DIR,
     seed: int = 42,
 ) -> dict[str, Any]:
+    import tensorflow as tf
+    from tensorflow import keras
+
+    from .training import load_processed_data
+
     model_path = Path(model_path)
     test_path = Path(test_path)
     scaler_path = Path(scaler_path)

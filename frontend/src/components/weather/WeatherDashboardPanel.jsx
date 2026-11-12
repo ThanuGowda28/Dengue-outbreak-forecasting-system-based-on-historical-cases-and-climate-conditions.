@@ -35,10 +35,10 @@ export default function WeatherDashboardPanel({ current, history, forecast, last
   const metrics = [
     { title: "Temperature", value: displayValue(current.temperature), unit: "°C", description: "Current air temperature", icon: FiThermometer, tone: "coral" },
     { title: "Humidity", value: displayValue(current.humidity, 0), unit: "%", description: "Relative humidity", icon: FiDroplet, tone: "blue" },
-    { title: "Rainfall", value: displayValue(current.rainfall), unit: "mm", description: "Recent provider-reported rainfall", icon: FiCloud, tone: "teal" },
+    { title: "Rainfall", value: displayValue(current.rainfall), unit: "mm", description: "Recent reported rainfall", icon: FiCloud, tone: "teal" },
     { title: "Wind speed", value: displayValue(current.wind_speed), unit: "m/s", description: "Near-surface wind", icon: FiWind, tone: "violet" },
     { title: "Weather condition", value: current.description || "Unavailable", description: "Provider-reported conditions", icon: FiCloud, tone: "blue" },
-    { title: "UV index", value: displayValue(current.uv_index), description: "Not supplied by this provider when unavailable", icon: FiSun, tone: "amber" },
+    { title: "UV index", value: displayValue(current.uv_index), description: "Not available for this location", icon: FiSun, tone: "amber" },
     { title: "Last updated", value: updatedLabel(lastUpdated), description: "Provider observation time", icon: FiClock, tone: "teal" }
   ];
   const charts = [
@@ -75,7 +75,7 @@ export default function WeatherDashboardPanel({ current, history, forecast, last
         </p>
         <p className="weather-risk-explanation">
           {explanation.length ? `Weather conditions to watch: ${explanation.join(" ")}` : "No configured weather alert thresholds are currently exceeded."}
-          {" "}These indicators are not a dengue outbreak prediction.
+          {" "}These indicators are not a dengue outbreak forecast.
         </p>
       </section>
 

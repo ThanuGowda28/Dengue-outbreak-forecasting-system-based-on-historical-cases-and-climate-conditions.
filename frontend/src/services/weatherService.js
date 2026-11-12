@@ -49,6 +49,13 @@ export function normalizeWeatherError(error) {
   if (error.response?.status === 429) {
     return "Too many weather requests. Please wait briefly and try again.";
   }
+  if (error.response?.status === 503) {
+    const message = error.response.data?.message || "";
+    if (message.includes("OPENWEATHER_API_KEY")) {
+      return "Live weather is not configured for this application. Please contact the administrator.";
+    }
+    return "The weather provider is temporarily unavailable. Please try again later.";
+  }
   return error.response?.data?.message || getApiErrorMessage(
     error,
     "Weather data could not be loaded. Check your connection and try again."

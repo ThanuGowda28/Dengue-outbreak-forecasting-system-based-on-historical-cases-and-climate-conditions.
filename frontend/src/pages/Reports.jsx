@@ -81,7 +81,7 @@ function WeatherReports() {
 
   return (
     <div className="dashboard-page">
-      <div className="page-intro page-intro-actions"><div><span className="page-overline">WEATHER REPORTS</span><h2>Climate observations</h2><p>Review weather readings returned by the backend and external providers.</p></div><button type="button" className="btn btn-outline-primary" onClick={() => window.print()}><FiDownload className="me-2" />Print report</button></div>
+      <div className="page-intro page-intro-actions"><div><span className="page-overline">WEATHER REPORTS</span><h2>Climate observations</h2><p>Review saved weather observations.</p></div><button type="button" className="btn btn-outline-primary" onClick={() => window.print()}><FiDownload className="me-2" />Print report</button></div>
       <section className="surface-card report-filters">
         <div className="report-filter-field"><label className="form-label" htmlFor="report-district">District</label><select id="report-district" className="form-select" value={district} onChange={changeDistrict}>{districts.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}</select></div>
         <div className="report-filter-field"><label className="form-label" htmlFor="report-start">Start date</label><input id="report-start" className="form-control" type="date" value={startDate} max={endDate} onChange={(event) => setStartDate(event.target.value)} /></div>
@@ -90,18 +90,18 @@ function WeatherReports() {
       {error && <AlertMessage message={error} />}
       {loading && <div className="weather-loading"><span className="spinner-border spinner-border-sm text-primary" role="status" />Loading weather reports…</div>}
       <section className="row g-3">
-        <div className="col-6 col-xl-3"><DashboardCard label="Weather observations" value={countAvailable} change={`${statistics?.statistics?.total_weather_records ?? 0} stored API requests · ${district || "selected district"}`} icon={<FiCloud />} tone="blue" /></div>
+        <div className="col-6 col-xl-3"><DashboardCard label="Weather observations" value={countAvailable} change={`${statistics?.statistics?.total_weather_records ?? 0} saved records · ${district || "selected district"}`} icon={<FiCloud />} tone="blue" /></div>
         <div className="col-6 col-xl-3"><DashboardCard label="Temperature" value={average(rows, "temperature") == null ? "—" : `${average(rows, "temperature")}°C`} change="Observed average" icon={<FiThermometer />} tone="coral" /></div>
         <div className="col-6 col-xl-3"><DashboardCard label="Humidity" value={average(rows, "humidity") == null ? "—" : `${average(rows, "humidity")}%`} change="Observed average" icon={<FiDroplet />} tone="teal" /></div>
         <div className="col-6 col-xl-3"><DashboardCard label="Rainfall" value={sum(rows, "rainfall") == null ? "—" : `${sum(rows, "rainfall")} mm`} change="Observed total" icon={<FiWind />} tone="amber" /></div>
       </section>
       <section className="row g-3">
-        <div className="col-xl-6"><ChartCard title="Monthly weather" subtitle="Monthly average temperature from stored weather history">{monthlyTemperature.length ? <DengueLineChart labels={labels(monthlyTemperature)} data={monthlyTemperature.map((row) => row.temperature)} color="#1976d2" fill label="Temperature (°C)" /> : <EmptyState title="No monthly weather available" description="No provider-backed records exist for this district and period." />}</ChartCard></div>
+        <div className="col-xl-6"><ChartCard title="Monthly weather" subtitle="Monthly average temperature from saved observations">{monthlyTemperature.length ? <DengueLineChart labels={labels(monthlyTemperature)} data={monthlyTemperature.map((row) => row.temperature)} color="#1976d2" fill label="Temperature (°C)" /> : <EmptyState title="No monthly weather available" description="No saved observations exist for this district and period." />}</ChartCard></div>
         <div className="col-xl-6"><ChartCard title="Temperature trend" subtitle="Recorded observations">{temperature.length ? <DengueLineChart labels={labels(temperature)} data={temperature.map((row) => row.temperature)} color="#e53935" fill label="Temperature (°C)" /> : <EmptyState title="No temperature history" description="No observations were returned." />}</ChartCard></div>
         <div className="col-xl-6"><ChartCard title="Rainfall trend" subtitle="Recorded rainfall per observation">{rainfall.length ? <DengueLineChart labels={labels(rainfall)} data={rainfall.map((row) => row.rainfall)} color="#009688" fill label="Rainfall (mm)" /> : <EmptyState title="No rainfall history" description="No observations were returned." />}</ChartCard></div>
         <div className="col-xl-6"><ChartCard title="Humidity trend" subtitle="Recorded relative humidity">{humidity.length ? <DengueLineChart labels={labels(humidity)} data={humidity.map((row) => row.humidity)} color="#43a047" fill label="Humidity (%)" /> : <EmptyState title="No humidity history" description="No observations were returned." />}</ChartCard></div>
       </section>
-      <p className="demo-disclaimer"><FiActivity /> Reports include stored/provider weather only. No fabricated dengue case series or model-accuracy values are shown.</p>
+      <p className="demo-disclaimer"><FiActivity /> Reports include saved weather only; dengue case counts and model accuracy are not inferred from these observations.</p>
     </div>
   );
 }

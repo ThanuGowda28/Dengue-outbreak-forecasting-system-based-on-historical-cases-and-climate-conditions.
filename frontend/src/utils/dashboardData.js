@@ -19,12 +19,12 @@ export const climateFactors = [
 
 export const productFeatures = [
   { title: "Real-time weather", description: "Read current conditions and forecasts from connected weather services.", icon: FiCloud, color: "blue", href: "/weather" },
-  { title: "Ensemble prediction", description: "Classify annual climate summaries with a trained three-network ensemble; outputs are research-only.", icon: FiActivity, color: "teal", href: "/prediction" },
+  { title: "Climate risk assessment", description: "Classify annual climate summaries with a trained three-network ensemble; outputs are research-only.", icon: FiActivity, color: "teal", href: "/prediction" },
   { title: "District weather map", description: "Explore Karnataka locations and their connected weather observations.", icon: FiMap, color: "coral", href: "/risk-map" },
   { title: "Climate reports", description: "Review weather observations saved by the connected service.", icon: FiShield, color: "violet", href: "/reports" },
   { title: "QR-ready profile", description: "Keep essential profile details available in one place.", icon: FiActivity, color: "amber", href: "/profile" },
-  { title: "Voice climate input", description: "Dictate labelled climate values into the prediction form where browser speech recognition is supported.", icon: FiMic, color: "blue", href: "/prediction" },
-  { title: "Prediction history", description: "Review saved model classifications and filter them by state or risk level.", icon: FiActivity, color: "teal", href: "/history" },
+  { title: "Voice climate input", description: "Dictate labelled climate values into the climate risk assessment form where browser speech recognition is supported.", icon: FiMic, color: "blue", href: "/prediction" },
+  { title: "Forecast history", description: "Review saved forecasts, risk assessments, and recent activity.", icon: FiActivity, color: "teal", href: "/history" },
   { title: "Admin workspace", description: "A role-restricted UI for future project administration.", icon: FiShield, color: "coral", href: "/admin/dashboard" }
 ];
 
@@ -37,6 +37,6 @@ export const faqs = [
   { question: "What climate conditions are considered?", answer: "The model uses annual temperature, humidity, rainfall, wind, surface pressure, solar radiation, year, and State/UT. Historical case counts provide training labels, not request-time inputs." },
   { question: "How can I reduce mosquito breeding?", answer: "Empty, cover, or clean containers that collect water regularly. Follow local public-health guidance on mosquito control." },
   { question: "What should I do if I feel unwell?", answer: "Contact a qualified healthcare professional. If warning signs appear or symptoms worsen, seek urgent care rather than relying on an online forecast." },
-  { question: "Does the application provide dengue predictions?", answer: "Yes. It provides an experimental annual climate-based risk classification using a trained three-network ensemble and saves results in prediction history. Outputs are research classifications, not official surveillance or medical advice." },
+  { question: "Does the application provide a dengue forecast?", answer: "It provides a separate historical case-trend projection and an experimental annual climate-based risk classification. Neither is an official surveillance forecast or medical advice." },
   { question: "Does the application store medical records?", answer: "This application does not provide medical-record storage. Weather requests may be saved as climate observations by the backend." }
 ];

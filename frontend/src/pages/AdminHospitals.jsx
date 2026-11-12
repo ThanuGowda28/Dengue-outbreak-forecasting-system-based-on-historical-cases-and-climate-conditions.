@@ -10,7 +10,7 @@ import {
   importHospitals,
   saveHospital,
 } from "../services/hospitalService.js";
-import "../styles/hospital-finder.css";
+import "../styles/hospital-admin.css";
 
 const emptyHospital = {
   name: "", address: "", district: "", city: "", state: "", pincode: "",

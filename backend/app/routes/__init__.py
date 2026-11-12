@@ -8,6 +8,7 @@ from .alert_routes import alert_blueprint
 from .risk_map import risk_map_blueprint
 from .detection_routes import mosquito_detection_blueprint
 from .hospital_routes import hospital_blueprint
+from .forecasting import forecasting_blueprint
 from .health import health_blueprint
 from .prediction import prediction_blueprint
 from .records import records_blueprint
@@ -28,3 +29,4 @@ api_blueprint.register_blueprint(alert_blueprint)
 api_blueprint.register_blueprint(risk_map_blueprint)
 api_blueprint.register_blueprint(mosquito_detection_blueprint)
 api_blueprint.register_blueprint(hospital_blueprint)
+api_blueprint.register_blueprint(forecasting_blueprint)

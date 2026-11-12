@@ -1,18 +1,25 @@
+import os
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 
 project_env = Path(__file__).resolve().parents[2] / ".env"
 backend_env = Path(__file__).resolve().parents[1] / ".env"
-load_dotenv(project_env if project_env.is_file() else backend_env)
+load_dotenv(project_env)
+if backend_env.is_file():
+    for name, value in dotenv_values(backend_env).items():
+        if value is not None and not os.getenv(name, "").strip():
+            os.environ[name] = value
 
 from datetime import timedelta
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, redirect, request
 from flask_cors import CORS
+from flask_migrate import upgrade
 
 from .config import get_config
 from .cli import admin as admin_cli
+from .database_bootstrap import preserve_corrupt_sqlite_database
 from .extensions import bcrypt, db, jwt, migrate
 from .celery_app import init_celery
 from .logging_config import configure_logging
@@ -70,6 +77,17 @@ def create_app(config_object=None):
         db,
         directory=str(Path(__file__).resolve().parent.parent / "migrations"),
     )
+    if not app.testing and app.config.get("AUTO_MIGRATE_DATABASE", True):
+        with app.app_context():
+            backup = preserve_corrupt_sqlite_database(db.engine)
+            if backup:
+                app.logger.warning(
+                    "Corrupt SQLite database was preserved at %s; applying migrations to a new database.",
+                    backup,
+                )
+            upgrade(
+                directory=str(Path(__file__).resolve().parent.parent / "migrations")
+            )
     app.config.setdefault("JWT_TOKEN_LOCATION", ["headers"])
     app.config.setdefault("JWT_HEADER_NAME", "Authorization")
     app.config.setdefault("JWT_HEADER_TYPE", "Bearer")
@@ -97,6 +115,10 @@ def create_app(config_object=None):
                 "Production startup aborted because the dengue prediction model "
                 f"could not be loaded: {prediction_service.load_error}"
             )
+
+    @app.get("/")
+    def api_root():
+        return redirect("/api/docs")
 
     @app.after_request
     def add_security_headers(response):

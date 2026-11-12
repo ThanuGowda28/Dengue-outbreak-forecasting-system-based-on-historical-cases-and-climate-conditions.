@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
 import Sidebar from "../components/Sidebar.jsx";
 import Topbar from "../components/Topbar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -14,23 +15,20 @@ const DEFAULT_PREFERENCES = {
 const pageTitles = {
   "/dashboard": "Your dashboard",
   "/admin/dashboard": "Administration",
-  "/admin/dashboard": "Administration",
-  "/prediction": "Dengue prediction",
+  "/prediction": "Climate risk assessment",
+  "/forecasting": "AI forecast",
   "/weather": "Local weather",
   "/risk-map": "Community risk map",
-  "/mosquito-detection": "Mosquito site detection",
-  "/mosquito-detection/history": "Detection history",
-  "/history": "Prediction history",
-  "/alerts": "Alert history",
-  "/alert-settings": "Alert settings",
+  "/hospitals": "Hospital finder",
+  "/history": "History",
+  "/alerts": "Alerts",
   "/admin/alerts": "Alert management",
-  "/admin/mosquito-detection": "Mosquito detection reports",
   "/profile": "Your profile",
   "/settings": "Settings",
   "/users": "Manage users",
   "/datasets": "Manage datasets",
   "/climate-data": "Climate data",
-  "/train-model": "Train model",
+  "/train-model": "Research tools",
   "/reports": "Reports"
 };
 
@@ -96,14 +94,22 @@ export default function DashboardLayout() {
           themeDisabled={settingsLoading || Boolean(settingsError)}
         />
         <div className="dashboard-content">
-          <Outlet context={{
-            preferences,
-            changePreference,
-            savePreferences,
-            loadPreferences,
-            settingsLoading,
-            settingsError
-          }} />
+          <motion.div
+            key={location.pathname}
+            className="dashboard-route-content"
+            initial={{ opacity: 0, y: 7 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+          >
+            <Outlet context={{
+              preferences,
+              changePreference,
+              savePreferences,
+              loadPreferences,
+              settingsLoading,
+              settingsError
+            }} />
+          </motion.div>
         </div>
       </div>
     </div>

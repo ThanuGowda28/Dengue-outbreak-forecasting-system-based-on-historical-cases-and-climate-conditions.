@@ -227,7 +227,7 @@ def prediction_model_info():
             "wind_speed": "annual mean m/s",
             "pressure": "hPa (converted to kPa for model)",
             "solar_radiation": "annual mean MJ/m²/day",
-            "year": "2021-2026",
+            "year": "2026-2030",
         },
         "warning": "Annual climate aggregate classifier; softmax scores are not calibrated confidence estimates. Research output only, not medical advice.",
     }), 200

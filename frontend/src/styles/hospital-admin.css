@@ -1,0 +1,16 @@
+.hospital-admin-form { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hospital-admin-checks { align-items: center; display: flex; flex-wrap: wrap; gap: 12px; grid-column: 1 / -1; }
+.hospital-admin-toolbar { align-items: center; display: flex; flex-wrap: wrap; gap: 9px; justify-content: space-between; }
+.hospital-stat-grid { display: grid; gap: 12px; grid-template-columns: repeat(5, 1fr); margin-bottom: 16px; }
+.hospital-stat-grid > div { background: #f6f9f8; border-radius: 10px; display: grid; gap: 4px; padding: 13px; }
+.hospital-stat-grid span { color: #73878b; font-size: .68rem; }
+.hospital-stat-grid strong { color: #294851; font-size: 1.15rem; }
+
+@media (max-width: 700px) {
+  .hospital-admin-form { grid-template-columns: 1fr 1fr; }
+  .hospital-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 420px) {
+  .hospital-admin-form { grid-template-columns: 1fr; }
+}

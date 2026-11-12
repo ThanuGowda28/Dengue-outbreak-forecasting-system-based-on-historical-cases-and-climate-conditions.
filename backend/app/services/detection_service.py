@@ -27,7 +27,10 @@ def validate_image(upload: FileStorage) -> tuple[Image.Image, str, bytes]:
     maximum = int(current_app.config.get("MOSQUITO_MAX_IMAGE_BYTES", 10 * 1024 * 1024))
     if not upload or not upload.filename:
         raise InvalidDetectionImage("Select a JPG, JPEG, or PNG image.")
-    content = upload.stream.read(maximum + 1)
+    try:
+        content = upload.stream.read(maximum + 1)
+    finally:
+        upload.close()
     if len(content) > maximum:
         raise InvalidDetectionImage("Image exceeds the 10 MB upload limit.")
     if not content:

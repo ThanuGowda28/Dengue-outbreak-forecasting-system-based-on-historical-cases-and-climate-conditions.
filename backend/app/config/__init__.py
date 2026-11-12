@@ -5,6 +5,28 @@ from urllib.parse import urlsplit
 from sqlalchemy import URL
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DEMO_SQLITE_PATH = PROJECT_ROOT / "instance" / "dengue_local.sqlite"
+
+
+def _database_uri():
+    database_url = os.getenv("DATABASE_URL")
+    if database_url and database_url.lower().startswith("sqlite:"):
+        if database_url.lower() in {"sqlite://", "sqlite:///:memory:"}:
+            return database_url
+        return URL.create("sqlite", database=str(DEMO_SQLITE_PATH))
+    if database_url:
+        return database_url
+    return URL.create(
+        "mysql+pymysql",
+        username=os.getenv("DB_USER", "dengue_app"),
+        password=os.getenv("DB_PASSWORD", ""),
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "3306")),
+        database=os.getenv("DB_NAME", "dengue_forecasting"),
+    )
+
+
 class BaseConfig:
     LOCAL_DEMO_MODE = (
         os.getenv("APP_ENV", os.getenv("FLASK_ENV", "development")).lower()
@@ -68,14 +90,7 @@ class BaseConfig:
     ALERT_RETRY_DELAY_SECONDS = int(os.getenv("ALERT_RETRY_DELAY_SECONDS", "10"))
     CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_DATABASE_URI = URL.create(
-        "mysql+pymysql",
-        username=os.getenv("DB_USER", "dengue_app"),
-        password=os.getenv("DB_PASSWORD", ""),
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "3306")),
-        database=os.getenv("DB_NAME", "dengue_forecasting"),
-    )
+    SQLALCHEMY_DATABASE_URI = _database_uri()
     MAX_CONTENT_LENGTH = ML_TRAINING_UPLOAD_MAX_BYTES
 
 

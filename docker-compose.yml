@@ -51,6 +51,8 @@ services:
       - detection_data:/app/backend/instance/mosquito_detections
       - log_data:/app/backend/logs
     depends_on:
+      backend:
+        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:
@@ -84,6 +86,8 @@ services:
       - upload_data:/app/backend/instance/uploads
       - log_data:/app/backend/logs
     depends_on:
+      backend:
+        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:

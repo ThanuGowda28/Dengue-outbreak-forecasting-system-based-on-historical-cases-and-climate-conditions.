@@ -35,11 +35,6 @@ export async function getAdminClimateData(params = {}) {
   return data;
 }
 
-export async function getAdminModelStatus() {
-  const { data } = await api.get("/admin/model-status");
-  return data;
-}
-
 export async function startAdminModelTraining() {
   const { data } = await api.post("/admin/model-training");
   return data.job;

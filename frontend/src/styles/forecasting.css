@@ -1,0 +1,77 @@
+.forecasting-page { display: grid; gap: 16px; }
+.forecasting-intro { align-items: center; }
+.forecasting-intro h2 { margin: 4px 0; color: #294851; font-size: 1.22rem; font-weight: 700; }
+.forecasting-intro p { margin: 0; color: #839398; font-size: .74rem; }
+.forecast-method-badge { align-items: center; background: #edf6f5; border: 1px solid #d7e9e6; border-radius: 100px; color: #42716f; display: inline-flex; flex: none; font-size: .68rem; gap: 7px; padding: 8px 11px; }
+.forecast-controls, .forecast-climate-card, .forecast-result-card, .forecast-map-section, .forecast-history-section { padding: 18px; }
+.forecast-controls .surface-heading, .forecast-climate-card .surface-heading, .forecast-result-card .surface-heading, .forecast-map-section .surface-heading, .forecast-history-section .surface-heading { align-items: center; display: flex; justify-content: space-between; }
+.forecast-controls h2, .forecast-climate-card h2, .forecast-result-card h2, .forecast-map-section h2, .forecast-history-section h2 { color: #294851; font-size: .94rem; font-weight: 700; margin: 0 0 4px; }
+.forecast-controls .surface-heading p, .forecast-climate-card .surface-heading p, .forecast-result-card .surface-heading p, .forecast-map-section .surface-heading p, .forecast-history-section .surface-heading p { color: #839398; font-size: .68rem; margin: 0; }
+.forecast-form { align-items: end; display: grid; gap: 12px; grid-template-columns: 1fr 1.5fr 1.5fr auto; margin-top: 16px; }
+.forecast-form label { display: grid; gap: 6px; }
+.forecast-form label > span { color: #587176; font-size: .68rem; font-weight: 650; }
+.forecast-form label small { color: #849397; font-weight: 400; }
+.forecast-form .form-select { font-size: .75rem; min-height: 40px; }
+.forecast-submit { min-height: 40px; white-space: nowrap; }
+.forecast-data-note { color: #7d8f93; font-size: .65rem; line-height: 1.55; margin: 11px 0 0; }
+.forecast-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1.25fr) minmax(330px, .75fr); align-items: start; }
+.forecast-year-switch { background: #f2f6f6; border-radius: 8px; display: flex; gap: 3px; padding: 3px; }
+.forecast-year-switch button { background: transparent; border: 0; border-radius: 6px; color: #708388; font-size: .62rem; padding: 6px 8px; }
+.forecast-year-switch button.active { background: #fff; box-shadow: 0 1px 4px #1b3c3b1a; color: #176d68; font-weight: 700; }
+.forecast-chart { min-height: 250px; position: relative; }
+.forecast-climate-charts { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+.forecast-mini-chart { background: #fbfcfc; border: 1px solid #edf2f1; border-radius: 9px; padding: 10px; }
+.forecast-mini-chart > div:first-child { align-items: center; display: flex; justify-content: space-between; gap: 8px; }
+.forecast-mini-chart strong { color: #5e777c; font-size: .61rem; font-weight: 650; }
+.forecast-mini-chart > div:first-child span { color: #35545b; font-size: .68rem; font-weight: 700; }
+.forecast-mini-chart-canvas { height: 120px; margin-top: 7px; position: relative; }
+.forecast-trend-cards { display: grid; gap: 8px; grid-template-columns: repeat(5, minmax(0, 1fr)); margin-top: 8px; }
+.forecast-metric { background: #f7faf9; border: 1px solid #edf2f1; border-radius: 9px; display: grid; gap: 4px; min-width: 0; padding: 9px; }
+.forecast-metric > span { border-radius: 3px; height: 3px; width: 25px; }
+.forecast-metric small { color: #809196; font-size: .57rem; line-height: 1.35; min-height: 25px; }
+.forecast-metric strong { color: #35545b; font-size: .83rem; }
+.forecast-metric em { color: #849397; font-size: .55rem; font-style: normal; line-height: 1.4; }
+.forecast-source-note { color: #839398; display: block; font-size: .61rem; line-height: 1.5; margin-top: 10px; }
+.forecast-risk-banner { background: color-mix(in srgb, var(--forecast-risk) 9%, white); border: 1px solid color-mix(in srgb, var(--forecast-risk) 25%, white); border-radius: 12px; display: grid; gap: 4px; margin: 16px 0 12px; padding: 14px; }
+.forecast-risk-banner small { color: #75898d; font-size: .6rem; font-weight: 700; letter-spacing: .08em; }
+.forecast-risk-banner strong { color: var(--forecast-risk); font-size: 1.4rem; }
+.forecast-risk-banner span { color: #587176; font-size: .67rem; }
+.forecast-result-values { border-bottom: 1px solid #edf1f2; border-top: 1px solid #edf1f2; display: grid; gap: 8px; margin: 12px 0; padding: 11px 0; }
+.forecast-result-values > div { display: flex; justify-content: space-between; gap: 10px; }
+.forecast-result-values dt { color: #7c8d92; font-size: .66rem; font-weight: 400; }
+.forecast-result-values dd { color: #395860; font-size: .68rem; font-weight: 700; margin: 0; text-align: right; }
+.forecast-result-card h3 { color: #395860; font-size: .72rem; font-weight: 700; margin: 12px 0 7px; }
+.forecast-risk-summary { color: #657a7e; font-size: .68rem; line-height: 1.55; }
+.forecast-recommendations { color: #64797c; font-size: .65rem; line-height: 1.55; margin: 0; padding-left: 18px; }
+.forecast-recommendations li + li { margin-top: 3px; }
+.forecast-risk-chart { height: 180px; margin-top: 12px; min-height: 180px; }
+.forecast-map-wrap { border: 1px solid #e3ebea; border-radius: 10px; height: 420px; margin-top: 14px; overflow: hidden; }
+.forecast-leaflet-map { height: 100%; width: 100%; }
+.forecast-map-popup { display: grid; font-size: .72rem; gap: 5px; min-width: 150px; }
+.forecast-map-popup strong { color: #294851; }
+.forecast-map-legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: flex-end; margin-top: 11px; }
+.forecast-map-legend span { align-items: center; color: #657b80; display: flex; font-size: .63rem; gap: 6px; }
+.forecast-map-legend i { border-radius: 50%; height: 9px; width: 9px; }
+.forecast-history-table { font-size: .68rem; margin: 12px 0 0; vertical-align: middle; }
+.forecast-history-table th { color: #71868b; font-size: .62rem; font-weight: 650; white-space: nowrap; }
+.forecast-history-table td { color: #526a70; }
+.forecast-history-risk { font-weight: 700; }
+.forecast-empty { color: #819195; font-size: .7rem; margin: 16px 0 3px; }
+.forecast-disclaimer { align-items: flex-start; background: #fff8e9; border: 1px solid #f2e4c1; border-radius: 10px; color: #7c6945; display: flex; font-size: .66rem; gap: 8px; line-height: 1.55; padding: 11px 13px; }
+.forecast-disclaimer svg { flex: none; margin-top: 1px; }
+
+@media (max-width: 1100px) {
+  .forecast-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 767.98px) {
+  .forecasting-intro { align-items: flex-start; flex-direction: column; }
+  .forecast-form { grid-template-columns: 1fr; }
+  .forecast-submit { width: 100%; }
+  .forecast-controls, .forecast-climate-card, .forecast-result-card, .forecast-map-section, .forecast-history-section { padding: 14px; }
+  .forecast-climate-card .surface-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .forecast-trend-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .forecast-climate-charts { grid-template-columns: 1fr; }
+  .forecast-metric:last-child { grid-column: span 2; }
+  .forecast-map-wrap { height: 340px; }
+  .forecast-map-legend { justify-content: flex-start; }
+}

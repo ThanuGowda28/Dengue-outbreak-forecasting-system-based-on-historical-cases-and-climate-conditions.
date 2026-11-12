@@ -23,7 +23,7 @@ const timeline = [
   ["01", "Climate data", "Historical weather and case observations"],
   ["02", "Data cleaning", "Quality checks and feature preparation"],
   ["03", "Ensemble network", "Combine learned patterns from climate signals"],
-  ["04", "Prediction", "Estimate a community-level outlook"],
+  ["04", "Forecasting", "Explore future dengue risk and case trends"],
   ["05", "Dashboard", "Present context, trends, and risk indicators"]
 ];
 
@@ -69,7 +69,7 @@ export default function HomePage() {
             <div className="illustration-glow" />
             <div className="illustration-core"><FiActivity /><small>COMMUNITY HEALTH</small><strong>Early insight</strong></div>
             <div className="floating-climate"><FiCloud /><span><small>CLIMATE SIGNALS</small><strong>5 factors monitored</strong></span></div>
-            <div className="floating-risk"><span className="risk-spark"><FiHeart /></span><span><small>LOCAL OUTLOOK</small><strong>Risk awareness</strong></span><span className="risk-chip">LIVE UI</span></div>
+            <div className="floating-risk"><span className="risk-spark"><FiHeart /></span><span><small>LOCAL OUTLOOK</small><strong>Risk awareness</strong></span><span className="risk-chip">COMMUNITY</span></div>
             <span className="illustration-point illustration-point-a" /><span className="illustration-point illustration-point-b" /><span className="illustration-point illustration-point-c" />
           </div>
           <a className="hero-scroll" href="#about" aria-label="Scroll to about section"><FiArrowDown /></a>
@@ -82,8 +82,8 @@ export default function HomePage() {
           <div className="row g-3">
             <div className="col-md-6 col-xl-3"><InfoCard title="Purpose" description="Connect historical case data with climate patterns in a clear, accessible workspace." icon={FiHeart} color="teal" /></div>
             <div className="col-md-6 col-xl-3"><InfoCard title="Objectives" description="Explore model inputs, prepare data, and evaluate an ensemble neural-network approach." icon={FiActivity} color="blue" /></div>
-            <div className="col-md-6 col-xl-3"><InfoCard title="Technology" description="React, Flask, MySQL, TensorFlow/Keras, and scikit-learn." icon={FiBookOpen} color="violet" /></div>
-            <div className="col-md-6 col-xl-3"><InfoCard title="Benefits" description="Explore regional weather context through provider-backed observations and reports." icon={FiShield} color="amber" /></div>
+            <div className="col-md-6 col-xl-3"><InfoCard title="Research approach" description="Explore climate patterns, historical dengue cases, and experimental forecasting methods." icon={FiBookOpen} color="violet" /></div>
+            <div className="col-md-6 col-xl-3"><InfoCard title="Benefits" description="Explore regional weather context and saved climate observations." icon={FiShield} color="amber" /></div>
           </div>
           <Link className="section-inline-link" to="/about">Explore the project <FiArrowUpRight /></Link>
         </div>
@@ -115,19 +115,19 @@ export default function HomePage() {
       </section>
 
       <section className="landing-section landing-features">
-        <div className="container"><div className="section-title-block"><span className="page-overline">EXPLORE THE PLATFORM</span><h2>Useful tools, designed around people.</h2><p>Explore provider-backed weather alongside project modules that are still in development.</p></div>
+        <div className="container"><div className="section-title-block"><span className="page-overline">EXPLORE THE PLATFORM</span><h2>Useful tools, designed around people.</h2><p>Explore local weather, climate context, and experimental forecasting tools.</p></div>
           <div className="row g-3">{productFeatures.map((feature) => <div className="col-sm-6 col-xl-3" key={feature.title}><FeatureCard {...feature} /></div>)}</div>
         </div>
       </section>
 
       <section className="landing-section statistics-section">
-        <div className="container"><div className="section-title-block"><span className="page-overline">CLIMATE REPORTS</span><h2>Observed weather, in context.</h2><p>Charts use stored provider observations. This page does not present dengue case counts or model-evaluation metrics.</p></div>
+        <div className="container"><div className="section-title-block"><span className="page-overline">CLIMATE REPORTS</span><h2>Observed weather, in context.</h2><p>Charts use saved weather observations and do not claim dengue case counts or model accuracy.</p></div>
           {statisticsError && <div className="alert alert-warning" role="alert">{statisticsError}</div>}
           {statisticsLoading && <div className="weather-loading"><span className="spinner-border spinner-border-sm text-primary" role="status" />Loading climate reports…</div>}
           {!isAuthenticated && <div className="surface-card mb-3"><EmptyState title="Sign in to view climate reports" description="Stored observations are available in the authenticated reports workspace." action={<Link className="btn btn-outline-primary btn-sm mt-3" to="/login">Sign in</Link>} /></div>}
           <div className="row g-3">
             {isAuthenticated && <div className="col-xl-6"><section className="surface-card landing-chart-card"><h3>Monthly average temperature</h3><p>Recorded climate observations</p><div className="landing-chart">{monthlyWeather.length ? <DengueLineChart labels={labelsFor(monthlyWeather)} data={monthlyWeather.map((row) => row.temperature)} color="#1976d2" fill label="Temperature (°C)" /> : <EmptyState title="No monthly observations" description="No stored weather is available yet." />}</div></section></div>}
-            {isAuthenticated && <div className="col-xl-6"><section className="surface-card landing-chart-card"><h3>Temperature trend</h3><p>Daily observations returned by the reports API</p><div className="landing-chart">{weatherTrend.length ? <DengueLineChart labels={labelsFor(weatherTrend)} data={weatherTrend.map((row) => row.temperature)} color="#1976d2" fill label="Temperature (°C)" /> : <EmptyState title="No temperature trend" description="Stored observations will appear here when available." />}</div></section></div>}
+            {isAuthenticated && <div className="col-xl-6"><section className="surface-card landing-chart-card"><h3>Temperature trend</h3><p>Saved daily observations</p><div className="landing-chart">{weatherTrend.length ? <DengueLineChart labels={labelsFor(weatherTrend)} data={weatherTrend.map((row) => row.temperature)} color="#1976d2" fill label="Temperature (°C)" /> : <EmptyState title="No temperature trend" description="Saved observations will appear here when available." />}</div></section></div>}
             {isAuthenticated && <div className="col-xl-6"><section className="surface-card landing-chart-card"><h3>Humidity trend</h3><p>Daily relative humidity observations</p><div className="landing-chart">{humidityTrend.length ? <DengueLineChart labels={labelsFor(humidityTrend)} data={humidityTrend.map((row) => row.humidity)} color="#43a047" fill label="Humidity (%)" /> : <EmptyState title="No humidity trend" description="Stored observations will appear here when available." />}</div></section></div>}
             {isAuthenticated && <div className="col-xl-6"><section className="surface-card landing-chart-card"><h3>Rainfall trend</h3><p>Daily recorded rainfall observations</p><div className="landing-chart">{rainfallTrend.length ? <DengueLineChart labels={labelsFor(rainfallTrend)} data={rainfallTrend.map((row) => row.rainfall)} color="#009688" fill label="Rainfall (mm)" /> : <EmptyState title="No rainfall trend" description="Stored observations will appear here when available." />}</div></section></div>}
           </div>

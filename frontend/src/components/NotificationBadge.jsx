@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FiBell } from "react-icons/fi";
+import { Bell } from "lucide-react";
 import { getAlertHistory } from "../services/alertService.js";
 import AlertStatus from "./alerts/AlertStatus.jsx";
 
@@ -39,7 +39,7 @@ export default function NotificationBadge() {
   return (
     <div className="notification-wrap">
       <button type="button" className="icon-button notification-button" onClick={() => setOpen((value) => !value)} aria-label={`Notifications${pendingCount ? `, ${pendingCount} pending` : ""}`} aria-expanded={open}>
-        <FiBell />
+        <Bell size={18} aria-hidden="true" />
         {pendingCount > 0 && <span className="notification-count">{pendingCount > 9 ? "9+" : pendingCount}</span>}
       </button>
       {open && (
@@ -51,7 +51,7 @@ export default function NotificationBadge() {
               <small>{new Date(alert.sent_at || alert.created_at).toLocaleString()}</small>
             </div>
           )) : <span>No recent alert activity.</span>}
-          <Link to="/alerts" onClick={() => setOpen(false)}>View alert history</Link>
+          <Link to="/alerts" onClick={() => setOpen(false)}>View alerts</Link>
         </div>
       )}
     </div>

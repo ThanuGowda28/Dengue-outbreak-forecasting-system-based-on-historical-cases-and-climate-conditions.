@@ -1,22 +1,21 @@
 # End-to-End Testing Report
 
-**Date:** 2026-10-07  
-**Scope:** Registration, login, profile, dashboard, weather, prediction, prediction history, reports, admin, and logout.
+**Date:** 2026-11-05
+**Scope:** Current automated API/UI-unit checks, build, and local public-service smoke checks. This is not a complete authenticated browser E2E run.
 
-> Historical execution snapshot. The configured MySQL database was later
-> upgraded to `0007_email_verification_tokens`, and the model/authentication/
-> weather checks described by this final audit were performed after this
-> report's date. The test counts and incomplete browser journey below are not
-> current readiness results.
+> Older case-by-case details below are retained as historical evidence. Their
+> test counts, migration revision, and implementation-specific observations are
+> not current results.
 
-## Current follow-up verification (2026-10-13)
+## Current verification
 
-- Backend suite: **70 passed**.
-- Frontend unit tests: **12 passed**.
+- Backend suite: **124 passed** (`python -m unittest discover -s backend\tests -v`).
+- Frontend unit tests: **17 passed** (`npm test`).
 - Frontend production build: **passed**.
-- Database migration: **`0007_email_verification_tokens` applied**; verification-token table confirmed.
-- Live service checks: backend, model, and weather health checks passed; authenticated current weather, forecast, and historical weather requests returned success.
-- Full live authenticated browser-to-MySQL journey: not run in this audit.
+- Database migration metadata: Flask CLI reported **`0012_forecast_history (head)`**.
+- Local service smoke checks: the public frontend loaded, and the backend liveness endpoint returned `status: ok`.
+- Automated tests cover authentication, forecast APIs, weather/provider error handling, history, alerts, profile, settings, and other existing API behavior. Provider integrations are mocked where appropriate.
+- Authenticated browser workflows, live-MySQL CRUD, and live external weather-provider requests: **not verified**.
 
 ## Test approach and limits
 

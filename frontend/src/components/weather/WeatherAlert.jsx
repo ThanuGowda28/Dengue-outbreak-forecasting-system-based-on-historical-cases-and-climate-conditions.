@@ -11,7 +11,7 @@ export default function WeatherAlert({ current }) {
       <FiAlertTriangle aria-hidden="true" />
       <div>
         <strong>High Risk Alert</strong>
-        <p>Current weather alert: {triggers.join(" and ")}. This is a weather threshold alert, not an ensemble dengue prediction.</p>
+        <p>Current weather alert: {triggers.join(" and ")}. This is a weather threshold alert, not a dengue case forecast.</p>
       </div>
     </aside>
   );

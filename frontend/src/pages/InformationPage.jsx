@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   FiActivity,
   FiAlertTriangle,
@@ -22,7 +22,7 @@ const pageContent = {
     cards: [
       ["Purpose", "Make climate and historical-case context easier to understand through a clear, accessible interface.", FiHeart],
       ["Objectives", "Explore an ensemble neural-network approach and present its assumptions, inputs, and evaluation transparently.", FiTarget],
-      ["Technology", "React, Flask, MySQL, TensorFlow/Keras, scikit-learn, and interpretable visual summaries.", FiActivity],
+      ["Research approach", "Climate patterns and historical dengue cases inform experimental forecasting and risk assessment.", FiActivity],
       ["Potential benefit", "Support awareness and research by making modeled community trends easier to explore.", FiShield]
     ]
   },
@@ -67,14 +67,15 @@ const pageContent = {
     description: "Use this student project interface for demonstration and educational exploration only.",
     cards: [
       ["Not medical advice", "The application is not a medical device, diagnostic tool, or substitute for professional care.", FiHeart],
-      ["Forecasts unavailable", "The prediction page does not currently produce dengue forecasts. Weather conditions are not dengue risk scores.", FiActivity],
+      ["Forecasting tools", "The Forecast page projects historical annual case trends. A separate climate risk assessment uses annual climate inputs; neither is official public-health guidance.", FiActivity],
       ["Use official guidance", "For health decisions, follow current instructions from qualified healthcare providers and public-health authorities.", FiShield]
     ]
   }
 };
 
 export default function InformationPage() {
-  const { slug = "about" } = useParams();
+  const { pathname } = useLocation();
+  const slug = pathname.split("/").filter(Boolean).pop() || "about";
   const content = pageContent[slug] || pageContent.about;
   const climatePage = slug === "climate";
   const cards = climatePage

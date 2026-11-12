@@ -31,7 +31,7 @@ export default function AdminReports() {
   const risks = report?.predictions_by_risk || {};
   return (
     <div className="dashboard-page">
-      <div className="page-intro"><span className="page-overline">ADMINISTRATOR REPORTS</span><h2>System activity</h2><p>Database-backed totals across registered accounts, saved predictions, and weather requests.</p></div>
+      <div className="page-intro"><span className="page-overline">ADMINISTRATOR REPORTS</span><h2>System activity</h2><p>Totals across registered accounts, saved risk assessments, and weather requests.</p></div>
       <section className="surface-card report-filters" aria-label="Administrator report date range">
         <div className="report-filter-field"><label className="form-label" htmlFor="admin-report-start">Start date</label><input id="admin-report-start" className="form-control" type="date" value={startDate} max={endDate} onChange={(event) => setStartDate(event.target.value)} /></div>
         <div className="report-filter-field"><label className="form-label" htmlFor="admin-report-end">End date</label><input id="admin-report-end" className="form-control" type="date" value={endDate} min={startDate} max={today()} onChange={(event) => setEndDate(event.target.value)} /></div>
@@ -40,13 +40,13 @@ export default function AdminReports() {
       {loading && <p role="status">Loading administrator reports…</p>}
       <section className="row g-3">
         <div className="col-6 col-xl-3"><DashboardCard label="Registered users" value={summary.registered_users ?? "—"} icon={<FiUsers />} tone="teal" /></div>
-        <div className="col-6 col-xl-3"><DashboardCard label="Predictions" value={summary.predictions ?? "—"} icon={<FiTarget />} tone="amber" /></div>
+        <div className="col-6 col-xl-3"><DashboardCard label="Risk assessments" value={summary.predictions ?? "—"} icon={<FiTarget />} tone="amber" /></div>
         <div className="col-6 col-xl-3"><DashboardCard label="Weather records" value={summary.weather_records ?? "—"} icon={<FiCloud />} tone="blue" /></div>
         <div className="col-6 col-xl-3"><DashboardCard label="Weather categories" value={Object.keys(report?.weather_records_by_type || {}).length} icon={<FiDatabase />} tone="coral" /></div>
       </section>
       <section className="row g-3">
-        <div className="col-xl-7"><ChartCard title="Monthly prediction totals" subtitle="Saved model results by calendar month">{months.length ? <DengueLineChart labels={months.map((item) => item.month)} data={months.map((item) => item.count)} color="#1976d2" fill label="Predictions" /> : <EmptyState title="No prediction history" description="There are no saved prediction records to report." />}</ChartCard></div>
-        <div className="col-xl-5"><ChartCard title="Risk distribution" subtitle="Saved model classifications">{Object.keys(risks).length ? <DengueLineChart labels={Object.keys(risks)} data={Object.values(risks)} color="#e53935" fill label="Predictions" /> : <EmptyState title="No risk results" description="Risk totals will appear after users save predictions." />}</ChartCard></div>
+        <div className="col-xl-7"><ChartCard title="Monthly risk assessments" subtitle="Saved assessments by calendar month">{months.length ? <DengueLineChart labels={months.map((item) => item.month)} data={months.map((item) => item.count)} color="#1976d2" fill label="Assessments" /> : <EmptyState title="No assessment history" description="There are no saved risk assessments to report." />}</ChartCard></div>
+        <div className="col-xl-5"><ChartCard title="Risk distribution" subtitle="Saved climate risk assessments">{Object.keys(risks).length ? <DengueLineChart labels={Object.keys(risks)} data={Object.values(risks)} color="#e53935" fill label="Assessments" /> : <EmptyState title="No risk results" description="Risk totals will appear after assessments are saved." />}</ChartCard></div>
       </section>
       <p className="demo-disclaimer">Reports contain stored records only. They do not assert disease prevalence, model accuracy, or clinical outcomes.</p>
     </div>

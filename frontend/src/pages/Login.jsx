@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FiArrowLeft, FiLock } from "react-icons/fi";
+import { ArrowLeft, LockKeyhole } from "lucide-react";
 import AlertMessage from "../components/AlertMessage.jsx";
+import AuthStory from "../components/AuthStory.jsx";
 import FormInput from "../components/FormInput.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { apiError } from "../utils/authValidation.js";
@@ -41,31 +42,34 @@ export default function Login() {
 
   return (
     <main className="auth-page container">
-      <section className="auth-card">
-        <Link className="back-link" to="/"><FiArrowLeft /> Back to home</Link>
-        <div className="auth-heading">
-          <span className="auth-icon"><FiLock /></span>
-          <span className="eyebrow">WELCOME BACK</span>
-          <h1>Sign in to DengueWatch</h1>
-          <p>Access your community health dashboard.</p>
-        </div>
-        {location.state?.notice && (
-          <AlertMessage message={location.state.notice} variant="success" />
-        )}
-        <AlertMessage message={error?.message} errors={error?.errors} />
-        {verificationRequired && <p className="alert alert-info">Need a new link? <Link to="/verify-email" state={{ email: form.email }}>Resend verification email</Link></p>}
-        <form onSubmit={submit}>
-          <FormInput label="Email address" name="email" type="email" autoComplete="email" value={form.email} onChange={update} required />
-          <FormInput label="Password" name="password" type="password" autoComplete="current-password" value={form.password} onChange={update} required />
-          <div className="d-flex justify-content-end mb-3"><Link className="text-link small" to="/forgot-password">Forgot password?</Link></div>
-          <button className="btn btn-primary w-100 btn-lg" type="submit" disabled={submitting}>
-            {submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}
-            {submitting ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-        <p className="auth-switch">New to DengueWatch? <Link to="/register">Create an account</Link></p>
-        <p className="auth-switch"><Link to="/admin/login">Administrator sign in</Link></p>
-      </section>
+      <div className="auth-layout">
+        <AuthStory />
+        <section className="auth-card">
+          <Link className="back-link" to="/"><ArrowLeft size={16} /> Back to home</Link>
+          <div className="auth-heading">
+            <span className="auth-icon"><LockKeyhole size={21} /></span>
+            <span className="eyebrow">WELCOME BACK</span>
+            <h1>Sign in to DengueWatch</h1>
+            <p>Access your community health dashboard.</p>
+          </div>
+          {location.state?.notice && (
+            <AlertMessage message={location.state.notice} variant="success" />
+          )}
+          <AlertMessage message={error?.message} errors={error?.errors} />
+          {verificationRequired && <p className="alert alert-info">Need a new link? <Link to="/verify-email" state={{ email: form.email }}>Resend verification email</Link></p>}
+          <form onSubmit={submit}>
+            <FormInput label="Email address" name="email" type="email" autoComplete="email" value={form.email} onChange={update} required />
+            <FormInput label="Password" name="password" type="password" autoComplete="current-password" value={form.password} onChange={update} showPasswordToggle required />
+            <div className="d-flex justify-content-end mb-3"><Link className="text-link small" to="/forgot-password">Forgot password?</Link></div>
+            <button className="btn btn-primary w-100 btn-lg" type="submit" disabled={submitting}>
+              {submitting && <span className="spinner-border spinner-border-sm me-2" aria-hidden="true" />}
+              {submitting ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+          <p className="auth-switch">New to DengueWatch? <Link to="/register">Create an account</Link></p>
+          <p className="auth-switch"><Link to="/admin/login">Administrator sign in</Link></p>
+        </section>
+      </div>
     </main>
   );
 }

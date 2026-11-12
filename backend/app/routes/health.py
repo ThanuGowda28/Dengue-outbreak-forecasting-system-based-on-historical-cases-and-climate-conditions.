@@ -3,10 +3,12 @@ from pathlib import Path
 import shutil
 
 from flask import Blueprint, Response, current_app, jsonify, send_file
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from ..extensions import db
+from ..models import User
 
 health_blueprint = Blueprint("health", __name__)
 
@@ -74,9 +76,19 @@ def weather_health():
 
 
 @health_blueprint.get("/health/system")
+@jwt_required()
 def system_health():
     try:
+        user = db.session.get(User, int(get_jwt_identity()))
+    except (TypeError, ValueError):
+        user = None
+    if user is None:
+        return jsonify({"message": "Authentication is required."}), 401
+    if user.role.casefold() != "admin":
+        return jsonify({"message": "Access denied."}), 403
+    try:
         import psutil
+
         usage = shutil.disk_usage(current_app.root_path)
         return jsonify({
             "status": "ok",

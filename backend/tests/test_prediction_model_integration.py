@@ -74,7 +74,7 @@ class PredictionModelIntegrationTests(unittest.TestCase):
             "wind_speed": 2.8,
             "pressure": 1008.6,
             "solar_radiation": 18.2,
-            "year": 2025,
+            "year": 2026,
         }
         prediction_response = self.client.post(
             "/api/prediction/predict", json=payload, headers=self.headers
@@ -96,7 +96,7 @@ class PredictionModelIntegrationTests(unittest.TestCase):
             "/api/prediction/latest", headers=self.headers
         )
         filtered_history_response = self.client.get(
-            "/api/prediction/history?search=Karnataka&risk=High",
+            f"/api/prediction/history?search=Karnataka&risk={prediction['risk_level']}",
             headers=self.headers,
         )
         model_info_response = self.client.get(
@@ -105,6 +105,7 @@ class PredictionModelIntegrationTests(unittest.TestCase):
         self.assertEqual(history_response.status_code, 200)
         self.assertEqual(history_response.json["pagination"]["total_items"], 1)
         self.assertEqual(history_response.json["items"][0]["id"], prediction["id"])
+        self.assertEqual(history_response.json["items"][0]["year"], 2026)
         self.assertEqual(latest_response.status_code, 200)
         self.assertEqual(
             latest_response.json["prediction"]["id"], prediction["id"]

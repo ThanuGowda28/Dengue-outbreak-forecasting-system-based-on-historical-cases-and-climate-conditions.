@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { FiActivity, FiLogOut, FiUser } from "react-icons/fi";
+import { Activity, LogOut, UserRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 import AlertMessage from "./AlertMessage.jsx";
 
 const userLinks = [
   ["Dashboard", "/dashboard"],
-  ["Prediction", "/prediction"],
+  ["AI Forecast", "/forecasting"],
+  ["Climate Risk Assessment", "/prediction"],
   ["Weather", "/weather"],
   ["Risk Map", "/risk-map"],
-  ["History", "/history"]
+  ["History", "/history"],
+  ["Alerts", "/alerts"]
 ];
 const adminLinks = [
   ["Dashboard", "/dashboard"],
+  ["AI Forecast", "/forecasting"],
+  ["History", "/history"],
+  ["Alerts", "/alerts"],
   ["Users", "/users"],
   ["Datasets", "/datasets"],
   ["Climate data", "/climate-data"],
@@ -57,7 +62,7 @@ export default function Navbar() {
       )}
       <nav className="navbar navbar-expand-lg container">
         <Link className="navbar-brand brand-lockup" to="/" onClick={() => setExpanded(false)}>
-          <span className="brand-mark"><FiActivity /></span>
+          <span className="brand-mark"><Activity size={20} aria-hidden="true" /></span>
           <span>Dengue<span className="brand-accent">Watch</span><small>COMMUNITY HEALTH INTELLIGENCE</small></span>
         </Link>
         <button
@@ -79,10 +84,10 @@ export default function Navbar() {
             {isAuthenticated ? (
               <>
                 <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`} onClick={() => setExpanded(false)}>
-                  <FiUser className="me-1" /> Profile
+                  <UserRound size={16} className="me-1" aria-hidden="true" /> Profile
                 </NavLink>
                 <button className="btn btn-nav-logout" type="button" onClick={handleLogout}>
-                  <FiLogOut className="me-2" />Log out
+                  <LogOut size={16} className="me-2" aria-hidden="true" />Log out
                 </button>
               </>
             ) : (

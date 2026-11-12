@@ -6,7 +6,9 @@ info:
     Flask REST API for verified accounts, user records, live weather,
     dashboards, reports, administration, and saved-model inference. The model
     provides preliminary case-count classifications, not a validated
-    operational outbreak forecast.
+    operational outbreak forecast. The separate forecasting endpoints use
+    historical annual case and climate trends and do not call or modify the
+    existing prediction model.
 servers:
   - url: http://localhost:5000/api
     description: Local development
@@ -19,6 +21,7 @@ tags:
   - name: Risk Map
   - name: Dashboard
   - name: Prediction
+  - name: Forecasting
   - name: Reports
   - name: Records
   - name: Administration
@@ -54,10 +57,13 @@ paths:
   /health/system:
     get:
       tags: [Health]
-      summary: System and database status
+      summary: Administrator-only system metrics
+      security:
+        - bearerAuth: []
       responses:
-        "200": { description: System metrics are available }
-        "503": { description: System probe failed }
+        "200": { description: System metrics for an authenticated administrator }
+        "401": { description: Authentication required }
+        "403": { description: Administrator access required }
   /auth/register:
     post:
       tags: [Authentication]
@@ -66,7 +72,18 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              type: object
+              required: [state, temperature, humidity, rainfall, wind_speed, pressure, solar_radiation, year]
+              properties:
+                state: { type: string }
+                temperature: { type: number }
+                humidity: { type: number }
+                rainfall: { type: number }
+                wind_speed: { type: number }
+                pressure: { type: number }
+                solar_radiation: { type: number }
+                year: { type: integer, minimum: 2026, maximum: 2030 }
       responses:
         "201": { description: Account created; verification email sent; no session tokens issued }
         "400": { description: Validation error }
@@ -477,6 +494,104 @@ paths:
       responses:
         "200": { description: Current account data; alerts include today's Moderate/High saved model assessments when account notifications are enabled }
         "401": { description: Authentication required }
+  /forecast/options:
+    get:
+      tags: [Forecasting]
+      summary: List states, districts, historical years, and forecast years supported by the trend module
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Supported forecasting locations and year ranges }
+        "401": { description: Authentication required }
+        "503": { description: Historical forecasting data unavailable }
+  /forecast/trends:
+    get:
+      tags: [Forecasting]
+      summary: Get historical climate and dengue case trends
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: state
+          required: true
+          schema: { type: string }
+        - in: query
+          name: years
+          schema: { type: integer, enum: [5, 10], default: 5 }
+      responses:
+        "200": { description: Complete annual historical climate and dengue series }
+        "400": { description: Invalid state or range }
+        "401": { description: Authentication required }
+        "503": { description: Historical data unavailable }
+  /forecast:
+    post:
+      tags: [Forecasting]
+      summary: Generate and save a separate historical-trend forecast
+      description: >
+        Projects reported cases from complete annual state-level history using
+        a linear trend. This exploratory estimate does not use or alter the
+        existing ensemble prediction model; confidence is a heuristic fit indicator.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [state, forecast_year]
+              properties:
+                state: { type: string }
+                district: { type: string, nullable: true }
+                forecast_year: { type: integer, minimum: 2026, maximum: 2030 }
+      responses:
+        "201": { description: Forecast result and saved record identifier }
+        "400": { description: Invalid forecast input }
+        "401": { description: Authentication required }
+        "500": { description: Forecast could not be saved }
+        "503": { description: Historical data unavailable }
+  /forecast/history:
+    get:
+      tags: [Forecasting]
+      summary: List the authenticated user's saved forecasts
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200": { description: User-scoped saved forecast records }
+        "401": { description: Authentication required }
+  /forecast/map:
+    get:
+      tags: [Forecasting]
+      summary: Generate trend-based forecast risk markers for supported states
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: year
+          required: true
+          schema: { type: integer, minimum: 2026, maximum: 2030 }
+      responses:
+        "200": { description: State-centre coordinates, forecast risk, and heuristic fit indicator }
+        "400": { description: Invalid forecast year }
+        "401": { description: Authentication required }
+        "503": { description: Historical data unavailable }
+  /forecast/history/{forecast_id}/report.pdf:
+    get:
+      tags: [Forecasting]
+      summary: Download a saved forecast report with a timeline chart and climate summary
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: forecast_id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Forecast PDF report
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "401": { description: Authentication required }
+        "404": { description: User-owned forecast not found }
   /prediction/predict:
     post:
       tags: [Prediction]
@@ -485,7 +600,18 @@ paths:
         required: true
         content:
           application/json:
-            schema: { type: object }
+            schema:
+              type: object
+              required: [state, temperature, humidity, rainfall, wind_speed, pressure, solar_radiation, year]
+              properties:
+                state: { type: string }
+                temperature: { type: number }
+                humidity: { type: number }
+                rainfall: { type: number }
+                wind_speed: { type: number }
+                pressure: { type: number }
+                solar_radiation: { type: number }
+                year: { type: integer, minimum: 2026, maximum: 2030 }
       responses:
         "200": { description: Risk prediction and class probabilities }
         "400": { description: Invalid prediction input }

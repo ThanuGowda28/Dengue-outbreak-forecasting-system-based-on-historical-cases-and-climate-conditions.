@@ -3,12 +3,14 @@
 ## 1. System overview
 
 The system is a React single-page application backed by a Flask REST API and a
-MySQL relational database. External data sources are OpenWeather (location
+SQLAlchemy relational database (SQLite for the verified local demo; MySQL is
+supported). External data sources are OpenWeather (location
 search, current conditions, forecast) and NASA POWER (historical/daily
 climate). Offline data engineering transforms NCVBDC annual dengue totals and
-NASA POWER point observations into State/UT-year rows. An offline TensorFlow
-trainer and Flask prediction integration exist, but the current workspace
-does not have the complete model bundle required for inference.
+NASA POWER point observations into State/UT-year rows. The saved three-network
+TensorFlow ensemble is loaded by the climate risk assessment API. A separate
+forecasting service projects historical annual case-count trends and does not
+call the ensemble.
 
 ```text
 Browser (React/Vite)
@@ -18,13 +20,16 @@ Browser (React/Vite)
           │ HTTPS in deployment; bearer JWT in API requests
           ▼
 Flask app factory
-  ├── Auth / weather / dashboard / reports / prediction / health blueprints
-  ├── Weather and prediction services
+  ├── Auth / weather / dashboard / reports / assessment / forecasting blueprints
+  ├── Weather, ensemble assessment, and case-trend forecasting services
   ├── SQLAlchemy repositories and models
-  └── MySQL
+  └── SQLite or MySQL
        ├── users + token_blocklist
        ├── weather_history
-       └── prediction_history
+       ├── prediction_history
+       ├── forecast_history
+       ├── alert_history
+       └── mosquito_detections
 
 OpenWeather ── current/geocode/forecast
 NASA POWER ─── historical climate and offline point observations
@@ -50,7 +55,7 @@ backend/
     routes/               Flask Blueprints
     services/             Weather providers and prediction service
     logging_config.py     Rotating application log setup
-  migrations/             Alembic revisions 0001–0007
+  migrations/             Alembic revisions through 0012_forecast_history
   tests/                  unittest API and ML pipeline tests
   requirements.txt
 frontend/
@@ -58,7 +63,7 @@ frontend/
     components/           Shared UI and dashboard elements
     context/              Authentication context
     layouts/              Dashboard shell
-    pages/                Public, account, weather, prediction, admin pages
+    pages/                Public, account, weather, forecasting, admin pages
     services/             Axios API clients
     styles/               Shared page styles
     utils/                Validation and display helpers
@@ -110,23 +115,30 @@ Account suspension and server infrastructure settings are not implemented.
 | `users` | `id`, `full_name`, unique normalized `email`, `password_hash`, `phone`, `district`, `state`, `role`, `is_verified`, `created_at`, `updated_at`; role check permits `user` or `admin`. |
 | `token_blocklist` | Unique JWT `jti`, token type, user FK, revoked and expiry timestamps. |
 | `weather_history` | User FK, location/district, coordinates, record type, provider, observation/creation timestamps, normalized weather columns, JSON payload. |
-| `prediction_history` | User FK, State/UT, annual climate input columns, predicted class, confidence, probability/recommendation JSON, prediction timestamp. |
+| `prediction_history` | User FK, State/UT, annual climate input columns, risk class, confidence, probability/recommendation JSON, assessment timestamp. |
+| `forecast_history` | User FK, forecast year, state/district, projected risk/case trend, confidence, recommendations, and generation timestamp. |
+| `alert_history` | User FK, links to a climate risk assessment or site detection, delivery channel/status, message, and timestamps. |
+| `mosquito_detections` | User FK, detected site risk, confidence, detected objects, recommendations, optional location, and timestamps. |
 | `email_verification_tokens` | User FK, unique token hash, expiry and creation timestamps. |
 | `emergency_contacts` | One emergency-contact record per user. |
 | `prescription_records` | User-owned prescription transcription records. |
 | `user_preferences` | One row per user for alert, weekly-summary and dark-mode preferences. |
 
-The linear migration chain is `0001_auth_tables`, `0002_weather_history`,
+The linear migration chain includes `0001_auth_tables`, `0002_weather_history`,
 `0003_weather_observation_fields`, `0004_prediction_history`,
 `0005_admin_patient_records`, `0006_user_preferences`, and
-`0007_email_verification_tokens`. The configured database was upgraded and
-verified at head `0007_email_verification_tokens`; the verification-token
-table exists.
+`0007_email_verification_tokens`, followed by the additional account, alert,
+weather, detection, hospital, and forecast-history revisions through
+`0012_forecast_history`. The current local SQLite database was verified at
+revision `0012_forecast_history`; MySQL connectivity was not verified in the
+current local audit.
 
 ## 6. API reference
 
-All routes are prefixed `/api`. Except the static district catalog and health
-routes, application APIs require a bearer access JWT unless specified.
+All routes are prefixed `/api`. Application routes require a bearer access JWT
+unless the endpoint is explicitly documented as public. The detailed system
+health endpoint requires an administrator JWT and is not requested or rendered
+by the frontend.
 
 | Method | Endpoint | Access | Behavior |
 | --- | --- | --- | --- |
@@ -151,14 +163,19 @@ routes, application APIs require a bearer access JWT unless specified.
 | GET | `/weather/current` | Access JWT | OpenWeather current observation |
 | GET | `/weather/forecast` | Access JWT | OpenWeather forecast |
 | GET | `/weather/history` | Access JWT | NASA POWER historical observations |
-| GET | `/dashboard` | Access JWT | Current weather plus saved weather/prediction summaries |
+| GET | `/dashboard` | Access JWT | Current weather plus saved weather and climate risk assessment summaries |
 | GET | `/reports/weather` | Access JWT | Weather history for current account |
 | GET | `/reports/statistics` | Access JWT | Current-account weather counts and trends |
-| POST | `/prediction/predict` | Access JWT | Validate annual inputs, infer if model available, save result |
-| GET | `/prediction/history` | Access JWT | Paginated history; admin can see all prediction records |
-| DELETE | `/prediction/history/{id}` | Access JWT | Delete own record, or any record as admin |
-| GET | `/prediction/latest` | Access JWT | Latest record for user, or latest overall for admin |
-| GET | `/prediction/model-info` | Access JWT | Model metadata/availability |
+| POST | `/prediction/predict` | Access JWT | Validate annual inputs, run the ensemble, and save a climate risk assessment |
+| GET | `/prediction/history` | Access JWT | Paginated climate risk assessment history; admin can see all records |
+| DELETE | `/prediction/history/{id}` | Access JWT | Delete own assessment, or any record as admin |
+| GET | `/prediction/latest` | Access JWT | Latest assessment for user, or latest overall for admin |
+| GET | `/prediction/model-info` | Access JWT | Internal model input/output metadata |
+| POST | `/forecast` | Access JWT | Generate and save an experimental annual case-trend projection |
+| GET | `/forecast/history?page=1&per_page=20` | Access JWT | Paginated saved forecasts for the current user |
+| GET | `/forecast/history/{id}/report.pdf` | Access JWT | Download an owned forecast report |
+| GET | `/alerts/history` | Access JWT | Paginated alert history for the current user |
+| GET | `/mosquito-detection/history` | Access JWT | Paginated site-detection history for the current user |
 | GET/POST | `/admin/users` | Admin JWT | Search and create accounts |
 | PATCH/DELETE | `/admin/users/{user_id}` | Admin JWT | Update/delete one account |
 | GET | `/admin/predictions` | Admin JWT | List prediction records |
@@ -173,11 +190,11 @@ routes, application APIs require a bearer access JWT unless specified.
 | POST | `/admin/model-training` | Admin JWT | Start training job |
 | GET | `/admin/model-training/{job_id}` | Admin JWT | Retrieve training-job status |
 | GET/POST | `/prediction` | Deprecated | Returns `410 Gone`; use `/prediction/predict` and `/prediction/history` |
-| GET | `/health` | Public | Liveness |
-| GET | `/health/database` | Public | Database readiness |
-| GET | `/health/model` | Public | Model readiness |
-| GET | `/health/weather` | Public | Weather-key readiness |
-| GET | `/health/system` | Public | CPU/memory/disk and dependency status |
+| GET | `/health` | Public | Minimal liveness |
+| GET | `/health/database` | Public | Database readiness probe; not requested or rendered by the frontend |
+| GET | `/health/model` | Public | Model readiness probe; not requested or rendered by the frontend |
+| GET | `/health/weather` | Public | Weather readiness probe; not requested or rendered by the frontend |
+| GET | `/health/system` | Administrator JWT | Detailed system metrics; not requested or rendered by the frontend |
 
 `backend/openapi.yaml` documents the implemented API operations and access
 requirements. It is maintained alongside the Flask blueprints rather than

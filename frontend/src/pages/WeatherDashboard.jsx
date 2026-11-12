@@ -269,7 +269,7 @@ export default function WeatherDashboard() {
       </div>
 
       {error && <AlertMessage message={error} />}
-      {loading && <div className="weather-loading"><span className="spinner-border spinner-border-sm text-primary" role="status" /><span>Fetching provider weather data…</span></div>}
+      {loading && <div className="weather-loading"><span className="spinner-border spinner-border-sm text-primary" role="status" /><span>Loading current weather…</span></div>}
       {!current && !loading && !error && <AlertMessage message="No current weather was returned for this location." />}
 
       {current && <>
@@ -289,7 +289,7 @@ export default function WeatherDashboard() {
               <ClimateValue label="Sunrise" value={current.sunrise} unit="" />
               <ClimateValue label="Sunset" value={current.sunset} unit="" />
               <ClimateValue label="Observation date" value={current.weather_date} unit="" />
-              <p className="weather-source">Source: {weatherMeta?.source || "Weather provider"}{weatherMeta?.cached ? " · cached response" : ""}</p>
+              <p className="weather-source">Weather details may be updated periodically{weatherMeta?.cached ? " · showing recent data" : ""}.</p>
             </div>
           </ChartCard></div>
         </section>
@@ -300,7 +300,7 @@ export default function WeatherDashboard() {
         {forecastError && <AlertMessage message={forecastError} />}
         {forecastByDay.length ? <div className="weather-forecast-grid">{forecastByDay.map((day) => <ForecastCard key={day.weather_date} day={dateLabel(day.weather_date)} icon={iconByCode(day.icon)} high={day.temperature == null ? "—" : Math.round(day.temperature)} low={day.temperature_min == null ? "—" : Math.round(day.temperature_min)} condition={day.description || "Conditions"} rain={day.rainfall != null ? `${day.rainfall} mm` : undefined} />)}</div> : <p className="mb-0 small text-secondary">Forecast is unavailable until a provider returns forecast data.</p>}
       </section>
-      <p className="demo-disclaimer">Weather observations are informational and can be delayed or unavailable. They do not represent a dengue diagnosis or outbreak prediction.</p>
+      <p className="demo-disclaimer">Weather observations are informational and can be delayed or unavailable. They do not represent a dengue diagnosis or outbreak forecast.</p>
     </div>
   );
 }

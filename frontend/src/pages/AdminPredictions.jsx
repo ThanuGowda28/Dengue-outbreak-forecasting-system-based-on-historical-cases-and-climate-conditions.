@@ -23,7 +23,7 @@ export default function AdminPredictions() {
       setPagination(result.pagination);
       setError("");
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Predictions could not be loaded.");
+      setError(requestError.response?.data?.message || "Risk assessments could not be loaded.");
     } finally {
       setLoading(false);
     }
@@ -37,7 +37,7 @@ export default function AdminPredictions() {
       await deleteAdminPrediction(id);
       await load();
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Prediction could not be deleted.");
+      setError(requestError.response?.data?.message || "Risk assessment could not be deleted.");
     }
   }
 
@@ -47,26 +47,26 @@ export default function AdminPredictions() {
       const result = await getAdminPrediction(id);
       setSelected(result.prediction);
     } catch (requestError) {
-      setError(requestError.response?.data?.message || "Prediction details could not be loaded.");
+      setError(requestError.response?.data?.message || "Risk assessment details could not be loaded.");
     }
   }
 
   return (
     <div className="dashboard-page">
-      <div className="page-intro"><span className="page-overline">ADMINISTRATION</span><h2>Prediction management</h2><p>Review and remove stored model results. Prediction results are immutable.</p></div>
+      <div className="page-intro"><span className="page-overline">ADMINISTRATION</span><h2>Risk assessment management</h2><p>Review or remove saved climate risk assessments.</p></div>
       {error && <AlertMessage message={error} />}
       <section className="surface-card">
-        <div className="surface-heading"><h3 className="h5">All predictions</h3><select aria-label="Filter by risk" className="form-select" value={risk} onChange={(event) => { setPage(1); setRisk(event.target.value); }}><option value="">All risk levels</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
-        {loading ? <p role="status">Loading predictions…</p> : predictions.length === 0 ? <p className="text-secondary mb-0">No prediction records found.</p> : (
+        <div className="surface-heading"><h3 className="h5">All risk assessments</h3><select aria-label="Filter by risk" className="form-select" value={risk} onChange={(event) => { setPage(1); setRisk(event.target.value); }}><option value="">All risk levels</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
+        {loading ? <p role="status">Loading risk assessments…</p> : predictions.length === 0 ? <p className="text-secondary mb-0">No assessment records found.</p> : (
           <div className="table-responsive"><table className="table align-middle"><thead><tr><th>ID</th><th>User</th><th>State</th><th>Risk</th><th>Confidence</th><th>Created</th><th>Actions</th></tr></thead><tbody>
             {predictions.map((item) => <tr key={item.id}><td>{item.id}</td><td>{item.user_id}</td><td>{item.state}</td><td>{item.risk_level}</td><td>{item.confidence}%</td><td>{new Date(item.prediction_time).toLocaleString()}</td><td><div className="d-flex gap-2"><button className="btn btn-outline-primary btn-sm" type="button" onClick={() => viewPrediction(item.id)}>View</button><button className="btn btn-outline-danger btn-sm" type="button" onClick={() => remove(item.id)}>Delete</button></div></td></tr>)}
           </tbody></table></div>
         )}
-        {pagination && pagination.total_pages > 1 && <div className="d-flex align-items-center justify-content-between mt-3"><span>Page {pagination.page} of {pagination.total_pages} · {pagination.total_items} predictions</span><div className="d-flex gap-2"><button className="btn btn-outline-primary btn-sm" type="button" disabled={!pagination.has_previous || loading} onClick={() => setPage((current) => current - 1)}>Previous</button><button className="btn btn-outline-primary btn-sm" type="button" disabled={!pagination.has_next || loading} onClick={() => setPage((current) => current + 1)}>Next</button></div></div>}
+        {pagination && pagination.total_pages > 1 && <div className="d-flex align-items-center justify-content-between mt-3"><span>Page {pagination.page} of {pagination.total_pages} · {pagination.total_items} assessments</span><div className="d-flex gap-2"><button className="btn btn-outline-primary btn-sm" type="button" disabled={!pagination.has_previous || loading} onClick={() => setPage((current) => current - 1)}>Previous</button><button className="btn btn-outline-primary btn-sm" type="button" disabled={!pagination.has_next || loading} onClick={() => setPage((current) => current + 1)}>Next</button></div></div>}
       </section>
-      {selected && <section className="surface-card mt-3"><div className="surface-heading"><h3 className="h5">Prediction #{selected.id}</h3><button className="btn btn-outline-secondary btn-sm" type="button" onClick={() => setSelected(null)}>Close</button></div><div className="row g-3">
+      {selected && <section className="surface-card mt-3"><div className="surface-heading"><h3 className="h5">Risk Assessment #{selected.id}</h3><button className="btn btn-outline-secondary btn-sm" type="button" onClick={() => setSelected(null)}>Close</button></div><div className="row g-3">
         <Detail label="User ID" value={selected.user_id} /><Detail label="State" value={selected.state} /><Detail label="Year" value={selected.year} /><Detail label="Risk level" value={selected.risk_level} /><Detail label="Confidence" value={`${selected.confidence}%`} /><Detail label="Temperature" value={`${selected.temperature} °C`} /><Detail label="Humidity" value={`${selected.humidity}%`} /><Detail label="Rainfall" value={`${selected.rainfall} mm`} /><Detail label="Wind speed" value={selected.wind_speed} /><Detail label="Pressure" value={selected.pressure} /><Detail label="Solar radiation" value={selected.solar_radiation} />
-      </div><h4 className="h6 mt-3">Class probabilities</h4><pre className="mb-0">{JSON.stringify(selected.class_probabilities, null, 2)}</pre></section>}
+      </div><h4 className="h6 mt-3">Risk probabilities</h4><div className="row g-2">{Object.entries(selected.class_probabilities || {}).map(([level, probability]) => <div className="col-md-4" key={level}><div className="border rounded p-2"><span className="d-block text-secondary">{level}</span><strong>{(Number(probability) * 100).toFixed(1)}%</strong></div></div>)}</div></section>}
     </div>
   );
 }

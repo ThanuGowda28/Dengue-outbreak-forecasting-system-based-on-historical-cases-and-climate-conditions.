@@ -53,3 +53,4 @@ from .user_preferences import UserPreference
 from .alert_model import AlertHistory, AlertPreference
 from .mosquito_detection import MosquitoDetection
 from .hospital import Hospital
+from .forecast_history import ForecastHistory

@@ -17,8 +17,8 @@
 .alert-empty svg { color: #61a99a; font-size: 1.5rem; }
 .alert-empty strong { color: #425d63; font-size: .8rem; }
 .alert-empty span { font-size: .68rem; }
-.alert-settings-card { max-width: 900px; }
-.alert-settings-card .preference-row { min-height: 84px; }
+.alert-preferences-card { max-width: 900px; }
+.alert-preferences-card .preference-row { min-height: 84px; }
 .alert-admin-toolbar { align-items: center; display: grid; gap: 8px; grid-template-columns: minmax(160px,2fr) repeat(4,minmax(115px,1fr)) auto auto; margin-bottom: 18px; }
 .alert-admin-toolbar .form-control,.alert-admin-toolbar .form-select { font-size: .67rem; min-height: 38px; }
 .alert-notification-popover { display: grid; gap: 10px; max-height: 390px; overflow-y: auto; width: min(360px, calc(100vw - 28px)); }

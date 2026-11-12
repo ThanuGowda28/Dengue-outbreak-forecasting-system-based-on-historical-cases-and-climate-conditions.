@@ -6,6 +6,8 @@ from unittest.mock import patch
 
 from flask_jwt_extended import create_access_token
 from PIL import Image
+from werkzeug.datastructures import FileStorage
+from werkzeug.test import encode_multipart
 
 from backend.app import create_app
 from backend.app.extensions import db
@@ -95,7 +97,7 @@ class MosquitoDetectionApiTests(unittest.TestCase):
         return output.getvalue()
 
     def _upload(self, image=None, headers=None, **form):
-        return self.client.post(
+        response = self.client.post(
             "/api/mosquito-detection/analyze",
             data={
                 "image": (io.BytesIO(image or self._image_bytes()), "site.jpg"),
@@ -104,6 +106,8 @@ class MosquitoDetectionApiTests(unittest.TestCase):
             headers=headers or self.user_headers,
             content_type="multipart/form-data",
         )
+        self.addCleanup(response.close)
+        return response
 
     def test_analysis_saves_result_alerts_and_private_images(self):
         db.session.add(
@@ -159,7 +163,21 @@ class MosquitoDetectionApiTests(unittest.TestCase):
     def test_rejects_corrupt_unsupported_large_images_and_partial_location(self):
         corrupt = self._upload(image=b"not an image")
         unsupported = self._upload(image=self._image_bytes("WEBP"))
-        oversized = self._upload(image=b"x" * (10 * 1024 * 1024 + 1))
+        boundary, oversized_body = encode_multipart(
+            {
+                "image": FileStorage(
+                    io.BytesIO(b"x" * (10 * 1024 * 1024 + 1)),
+                    filename="site.jpg",
+                )
+            }
+        )
+        oversized = self.client.post(
+            "/api/mosquito-detection/analyze",
+            data=oversized_body,
+            headers=self.user_headers,
+            content_type=f"multipart/form-data; boundary={boundary}",
+        )
+        self.addCleanup(oversized.close)
         partial_location = self._upload(latitude="12.3")
         self.assertEqual(corrupt.status_code, 400)
         self.assertIn("corrupted", corrupt.json["message"].lower())
@@ -227,6 +245,7 @@ class MosquitoDetectionApiTests(unittest.TestCase):
             f"/api/mosquito-detection/{detection_id}/report.pdf",
             headers=self.user_headers,
         )
+        self.addCleanup(report.close)
         self.assertEqual(report.status_code, 200)
         self.assertEqual(report.mimetype, "application/pdf")
         self.assertTrue(report.data.startswith(b"%PDF"))

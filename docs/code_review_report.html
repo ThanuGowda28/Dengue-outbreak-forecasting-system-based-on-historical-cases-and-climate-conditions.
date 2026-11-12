@@ -21,7 +21,7 @@
 <body><main>
   <header>
     <h1>Code Review and Current Status</h1>
-    <p>Scope: application routes, data/ML pipeline, model artifacts, persistence, frontend/admin surfaces, and deployment configuration. This report is not a penetration test or compliance certification. The original findings were rechecked on 2026-10-13; entries below reflect current status.</p>
+    <p>Historical code-review snapshot, last checked 2026-10-13. This report is not a current security review, penetration test, or compliance certification; implementation-specific findings below must be revalidated against the current tree. The 2026-11-05 verification ran 124 backend tests, 17 frontend tests, and a frontend production build successfully; current local service checks are summarized in the <a href="./test_report.html">test report</a>.</p>
     <p>Two release-readiness defects found during local validation were corrected: Flask logging app-path handling, and an unterminated CSV export string in the prediction page. A missing-directory assumption in the system-health probe was also corrected. The tests/build now pass; these changes do not create model artifacts or add feature behavior.</p>
   </header>
   <section>
@@ -51,7 +51,7 @@
   </section>
   <section>
     <h2>Related validation</h2>
-    <p>Current verification: backend tests 70 passed; frontend tests 12 passed; frontend production build passed. The 52% backend coverage figure is from an older coverage snapshot, not this audit. See the <a href="./test_report.html">test report</a> and <a href="./coverage_report.html">historical coverage report</a>.</p>
+    <p>Current verification (2026-11-05): backend tests 124 passed; frontend tests 17 passed; frontend production build passed. The 52% backend coverage figure and findings above are historical snapshots, not current measurements. See the <a href="./test_report.html">test report</a> and <a href="./coverage_report.html">historical coverage report</a>.</p>
   </section>
 </main></body>
 </html>

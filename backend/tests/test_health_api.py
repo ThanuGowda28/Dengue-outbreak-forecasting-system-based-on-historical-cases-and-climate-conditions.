@@ -33,10 +33,18 @@ class HealthApiTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/health/weather").status_code, 200)
         self.assertEqual(self.client.get("/api/health/model").status_code, 503)
 
-    def test_system_health_and_security_headers(self):
+    def test_backend_root_redirects_to_api_documentation(self):
+        response = self.client.get("/", follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers["Location"], "/api/docs")
+
+    def test_system_metrics_endpoint_requires_authentication(self):
         response = self.client.get("/api/health/system")
+        self.assertEqual(response.status_code, 401)
+
+    def test_security_headers(self):
+        response = self.client.get("/api/health")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["database"], "available")
         self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
         self.assertEqual(response.headers["X-Frame-Options"], "DENY")
         self.assertEqual(response.headers["Cache-Control"], "no-store")

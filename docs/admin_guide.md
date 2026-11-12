@@ -91,9 +91,9 @@ credentials, HTTPS, centralized logs, and monitored backups.
 
 Current weather caching and request limiting are process-local. A
 multi-worker/multi-replica deployment needs a shared backend before limits and
-cache state can be treated consistently. Health endpoints expose operational
-readiness; `/api/health/system` additionally exposes CPU, memory, disk, and
-dependency state and should be limited to trusted monitoring networks.
+cache state can be treated consistently. The public liveness probe exposes no
+resource metrics. Detailed system metrics remain available only to
+authenticated administrators and are not displayed in the frontend.
 
 ## 7. Backup and restore
 

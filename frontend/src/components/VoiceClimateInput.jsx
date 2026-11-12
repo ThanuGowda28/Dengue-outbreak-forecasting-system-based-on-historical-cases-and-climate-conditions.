@@ -51,7 +51,7 @@ export default function VoiceClimateInput({ supportedStates, onRecognized }) {
         return;
       }
       onRecognized(parsed);
-      setMessage("Recognized values were placed in the form. Review them and submit the prediction manually.");
+      setMessage("Recognized values were placed in the form. Review them and submit the climate risk assessment.");
     };
     recognition.onerror = (event) => {
       setError(speechErrorMessages[event.error] || "Speech recognition failed. Try again or enter values manually.");

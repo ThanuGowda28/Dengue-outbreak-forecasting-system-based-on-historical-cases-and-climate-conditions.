@@ -8,6 +8,7 @@ import "./styles/landing.css";
 import "./styles/dashboard.css";
 import "./styles/alerts.css";
 import "./styles/polish.css";
+import "./styles/design-system.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 
