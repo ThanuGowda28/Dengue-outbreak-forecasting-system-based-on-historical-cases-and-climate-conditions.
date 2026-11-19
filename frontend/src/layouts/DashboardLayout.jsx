@@ -15,7 +15,7 @@ const DEFAULT_PREFERENCES = {
 const pageTitles = {
   "/dashboard": "Your dashboard",
   "/admin/dashboard": "Administration",
-  "/prediction": "Climate risk assessment",
+  "/prediction": "Prediction",
   "/forecasting": "AI forecast",
   "/weather": "Local weather",
   "/risk-map": "Community risk map",
@@ -23,6 +23,7 @@ const pageTitles = {
   "/history": "History",
   "/alerts": "Alerts",
   "/admin/alerts": "Alert management",
+  "/admin/mosquito-detection": "Mosquito detection reports",
   "/profile": "Your profile",
   "/settings": "Settings",
   "/users": "Manage users",

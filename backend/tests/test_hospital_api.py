@@ -1,12 +1,14 @@
 import io
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import requests
 from flask_jwt_extended import create_access_token
 
 from backend.app import create_app
 from backend.app.extensions import db
 from backend.app.models import Hospital, User
+from backend.app.services.hospital_service import find_osm_facilities
 
 
 class TestConfig:
@@ -259,6 +261,32 @@ class HospitalApiTests(unittest.TestCase):
             )
         self.assertEqual(response.status_code, 503)
         self.assertEqual(response.json["error"], "hospital_provider_unavailable")
+
+    def test_overpass_falls_back_to_alternate_endpoint(self):
+        fallback_url = "https://overpass-fallback.test/api/interpreter"
+        self.app.config["HOSPITAL_OVERPASS_FALLBACK_URL"] = fallback_url
+        response = MagicMock()
+        response.json.return_value = {
+            "elements": [
+                {
+                    "type": "node",
+                    "id": 123,
+                    "lat": 12.305,
+                    "lon": 76.655,
+                    "tags": {"name": "Mysuru District Hospital", "amenity": "hospital"},
+                }
+            ]
+        }
+
+        with patch(
+            "backend.app.services.hospital_service.requests.post",
+            side_effect=[requests.Timeout("Primary endpoint timed out."), response],
+        ) as post:
+            records = find_osm_facilities(12.2958, 76.6394, 25000)
+
+        self.assertEqual(records[0]["name"], "Mysuru District Hospital")
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual(post.call_args_list[1].args[0], fallback_url)
 
 
 if __name__ == "__main__":

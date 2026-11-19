@@ -148,19 +148,38 @@ def find_osm_facilities(latitude, longitude, radius_m):
         f'nwr(around:{radius_m},{latitude},{longitude})["healthcare"~"^(hospital|clinic|doctor|centre|center|blood_bank|laboratory|diagnostic)$"];'
         ");out center tags;"
     )
-    try:
-        response = requests.post(
+    endpoints = dict.fromkeys(
+        endpoint
+        for endpoint in (
             current_app.config["HOSPITAL_OVERPASS_URL"],
-            data={"data": query},
-            headers={"User-Agent": current_app.config["HOSPITAL_USER_AGENT"]},
-            timeout=current_app.config["HOSPITAL_PROVIDER_TIMEOUT_SECONDS"],
+            current_app.config.get("HOSPITAL_OVERPASS_FALLBACK_URL"),
         )
-        response.raise_for_status()
-        elements = response.json().get("elements", [])
-    except (requests.RequestException, ValueError) as error:
-        raise HospitalProviderError("The hospital data service is unavailable.") from error
-    records = [_osm_record(item) for item in elements]
-    return [record for record in records if record]
+        if endpoint
+    )
+    last_error = None
+    for endpoint in endpoints:
+        try:
+            response = requests.post(
+                endpoint,
+                data={"data": query},
+                headers={"User-Agent": current_app.config["HOSPITAL_USER_AGENT"]},
+                timeout=current_app.config["HOSPITAL_PROVIDER_TIMEOUT_SECONDS"],
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, dict) or not isinstance(payload.get("elements"), list):
+                raise ValueError("Overpass response did not contain an elements list.")
+            records = [_osm_record(item) for item in payload["elements"]]
+            return [record for record in records if record]
+        except (requests.RequestException, ValueError) as error:
+            last_error = error
+            current_app.logger.warning(
+                "Overpass endpoint failed: %s (status=%s)",
+                endpoint,
+                getattr(getattr(error, "response", None), "status_code", None),
+            )
+
+    raise HospitalProviderError("The hospital data service is unavailable.") from last_error
 
 
 def save_osm_facilities(records):

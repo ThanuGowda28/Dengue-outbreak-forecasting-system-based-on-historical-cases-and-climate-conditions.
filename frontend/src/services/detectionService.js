@@ -14,3 +14,29 @@ export async function retryDetectionAlerts(id) {
   const { data } = await api.post(`/mosquito-detection/${id}/alerts`);
   return data;
 }
+
+export async function getDetectionImage(id, kind = "original") {
+  const { data } = await api.get(`/mosquito-detection/${id}/image`, {
+    params: kind === "annotated" ? { kind } : undefined,
+    responseType: "blob"
+  });
+  return data;
+}
+
+export async function getAdminDetectionReports(params = {}) {
+  const { data } = await api.get("/mosquito-detection/admin/reports", { params });
+  return data;
+}
+
+export async function getAdminHighRiskBreedingSites() {
+  const { data } = await api.get("/mosquito-detection/high-risk-locations");
+  return data;
+}
+
+export async function exportAdminDetectionReports(params = {}) {
+  const { data } = await api.get("/mosquito-detection/admin/export", {
+    params,
+    responseType: "blob"
+  });
+  return data;
+}

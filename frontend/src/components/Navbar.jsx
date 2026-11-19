@@ -7,7 +7,7 @@ import AlertMessage from "./AlertMessage.jsx";
 const userLinks = [
   ["Dashboard", "/dashboard"],
   ["AI Forecast", "/forecasting"],
-  ["Climate Risk Assessment", "/prediction"],
+  ["Prediction", "/prediction"],
   ["Weather", "/weather"],
   ["Risk Map", "/risk-map"],
   ["History", "/history"],

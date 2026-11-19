@@ -23,10 +23,6 @@ from ..services.weather_provider import WeatherProviderError
 
 risk_map_blueprint = Blueprint("risk_map", __name__)
 
-MINIMUM_CLIMATE_DAYS = 300
-MINIMUM_RAINFALL_DAYS = 250
-MAX_DAILY_RAINFALL_MM = 250
-
 CLIMATE_FIELDS = {
     "temperature": "temperature_c",
     "humidity": "humidity_pct",
@@ -71,7 +67,7 @@ def _rolling_climate(provider, district, start_date, end_date, app):
 
 
 def _aggregate_climate(observations):
-    if len(observations) < MINIMUM_CLIMATE_DAYS:
+    if len(observations) < 300:
         raise WeatherProviderError(
             "At least 300 days of historical climate data are required to calculate a district risk score.",
             503,
@@ -87,14 +83,9 @@ def _aggregate_climate(observations):
             and not isinstance(value, bool)
             and math.isfinite(float(value))
         ]
-        minimum_days = MINIMUM_CLIMATE_DAYS
-        if field == "rainfall":
-            # Exclude daily spikes beyond the range observed in the model's training climate data.
-            values = [value for value in values if value <= MAX_DAILY_RAINFALL_MM]
-            minimum_days = MINIMUM_RAINFALL_DAYS
-        if len(values) < minimum_days:
+        if len(values) < 300:
             raise WeatherProviderError(
-                f"At least {minimum_days} valid {field} observations are required to calculate a district risk score.",
+                "Historical climate data is incomplete for the district risk calculation.",
                 503,
             )
         aggregates[field] = sum(values) if field == "rainfall" else sum(values) / len(values)

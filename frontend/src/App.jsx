@@ -34,6 +34,7 @@ const Alerts = lazy(() => import("./pages/Alerts.jsx"));
 const AdminAlerts = lazy(() => import("./pages/AdminAlerts.jsx"));
 const AdminWorkspace = lazy(() => import("./pages/AdminWorkspace.jsx"));
 const AdminHospitals = lazy(() => import("./pages/AdminHospitals.jsx"));
+const AdminMosquitoReports = lazy(() => import("./pages/AdminMosquitoReports.jsx"));
 
 function DashboardHome() {
   const { user } = useAuth();
@@ -58,7 +59,7 @@ function AppRoutes() {
     "/dashboard", "/admin", "/prediction", "/forecasting", "/weather", "/risk-map",
     "/history", "/profile", "/settings", "/alerts", "/reports", "/hospitals", "/users",
     "/admin/alerts",
-    "/admin/hospitals",
+    "/admin/hospitals", "/admin/mosquito-detection",
     "/datasets", "/climate-data", "/train-model"
   ].some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   if (loading) return <LoadingSpinner label="Checking your session…" />;
@@ -108,6 +109,7 @@ function AppRoutes() {
               <Route path="/train-model" element={<AdminWorkspace />} />
               <Route path="/admin/alerts" element={<AdminAlerts />} />
               <Route path="/admin/hospitals" element={<AdminHospitals />} />
+              <Route path="/admin/mosquito-detection" element={<AdminMosquitoReports />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />

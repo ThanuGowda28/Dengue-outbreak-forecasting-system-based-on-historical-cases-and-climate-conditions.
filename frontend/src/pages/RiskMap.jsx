@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
-import { FiCloud, FiInfo, FiMapPin, FiRefreshCw, FiThermometer } from "react-icons/fi";
+import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import { FiAlertCircle, FiCloud, FiInfo, FiMapPin, FiRefreshCw, FiThermometer } from "react-icons/fi";
 import AlertMessage from "../components/AlertMessage.jsx";
 import { ChartCard } from "../components/DashboardComponents.jsx";
 import LoadingSpinner from "../components/LoadingSpinner.jsx";
@@ -12,10 +12,17 @@ import { DengueLineChart } from "../components/TrendCharts.jsx";
 import { getPastDateRange, getCurrentWeather, getWeatherHistory, normalizeWeatherError } from "../services/weatherService.js";
 import { getRiskMapData } from "../services/riskMapService.js";
 import { getPredictionHistory } from "../services/predictionService.js";
+import { getAdminHighRiskBreedingSites } from "../services/detectionService.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { Link } from "react-router-dom";
 import "../styles/risk-map.css";
 
 export default function RiskMap() {
+  const { user } = useAuth();
+  const isAdmin = user?.role?.toLowerCase() === "admin";
   const [districts, setDistricts] = useState([]);
+  const [breedingSites, setBreedingSites] = useState([]);
+  const [siteError, setSiteError] = useState("");
   const [selected, setSelected] = useState(null);
   const [current, setCurrent] = useState(null);
   const [history, setHistory] = useState([]);
@@ -38,12 +45,24 @@ export default function RiskMap() {
         throw new Error("The risk map service returned an invalid response.");
       }
       if (requestId === mapRequest.current) {
+        if (!isAdmin) {
+          setBreedingSites([]);
+          setSiteError("");
+        }
         setDistricts(data);
         setSelected((previous) => previous
           ? data.find((district) => (
             district.district === previous.district && district.state === previous.state
           )) || null
           : null);
+        if (isAdmin) {
+          try {
+            setBreedingSites(await getAdminHighRiskBreedingSites());
+            setSiteError("");
+          } catch (error) {
+            setSiteError(error.response?.data?.message || "High-risk breeding-site reports could not be loaded.");
+          }
+        }
       }
     } catch (error) {
       if (requestId === mapRequest.current) {
@@ -56,7 +75,7 @@ export default function RiskMap() {
     } finally {
       if (requestId === mapRequest.current) setRefreshing(false);
     }
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     refreshRiskData();
@@ -92,7 +111,7 @@ export default function RiskMap() {
     if (historyResult.status === "fulfilled") setHistory(historyResult.value.history || []);
     else if (currentResult.status === "fulfilled") setWeatherError(normalizeWeatherError(historyResult.reason));
     if (predictionResult.status === "fulfilled") setPredictions(predictionResult.value.items || []);
-    else setPredictionError(predictionResult.reason.response?.data?.message || "Saved state-level risk assessments could not be loaded.");
+    else setPredictionError(predictionResult.reason.response?.data?.message || "Saved state-level predictions could not be loaded.");
     setDetailLoading(false);
   }
 
@@ -145,6 +164,25 @@ export default function RiskMap() {
                       onSelect={loadDistrict}
                     />
                   ))}
+                  {isAdmin && breedingSites.map((site) => (
+                    <CircleMarker
+                      key={`breeding-site-${site.id}`}
+                      center={[site.latitude, site.longitude]}
+                      radius={10}
+                      pathOptions={{ color: "#8f1d21", weight: 2, fillColor: "#d13c3c", fillOpacity: 0.9 }}
+                    >
+                      <Popup>
+                        <div className="breeding-site-popup">
+                          <strong>High-risk breeding-site report</strong>
+                          <span>{site.district || "Location not specified"}</span>
+                          <span>{Number(site.confidence).toFixed(1)}% detector confidence</span>
+                          <span>{site.objects_detected?.join(", ") || "Potential breeding site"}</span>
+                          <small>{new Date(site.created_at).toLocaleString()}</small>
+                          <Link to="/admin/mosquito-detection">Review all reports</Link>
+                        </div>
+                      </Popup>
+                    </CircleMarker>
+                  ))}
                 </MapContainer>
               ) : (
                 <div className="risk-map-empty">
@@ -156,6 +194,10 @@ export default function RiskMap() {
               {districts.length > 0 && <MapLegend />}
             </div>
           </section>
+          {isAdmin && <div className="risk-map-disclaimer">
+            <i className="breeding-site-map-key" aria-hidden="true" />
+            <span>{breedingSites.length} user-submitted high-risk breeding-site location(s) are shown in red.{siteError ? ` ${siteError}` : ""}</span>
+          </div>}
           <div className="risk-map-disclaimer">
             <FiInfo aria-hidden="true" />
             <span>The displayed score is the model’s uncalibrated class confidence, not a validated probability or medical diagnosis. Climate inputs are rolling 12-month aggregates because that is the period used to train the existing ensemble model.</span>
@@ -190,10 +232,10 @@ export default function RiskMap() {
                 <div><FiCloud /><span><small>Current humidity</small><strong>{current.current.humidity ?? "—"}%</strong></span></div>
                 <div><FiCloud /><span><small>Current rainfall</small><strong>{current.current.rainfall ?? "—"} mm</strong></span></div>
                 <div><FiInfo /><span><small>Pressure</small><strong>{current.current.pressure ?? "—"} hPa</strong></span></div>
-                <p className="weather-source">Recent local weather observations</p>
+                <p className="weather-source">Source: {current.source || "Weather provider"}</p>
               </div>
             )}
-            {!selected && <p className="map-detail-empty">Select a marker to view estimated risk, climate observations, and local weather.</p>}
+            {!selected && <p className="map-detail-empty">Select a marker to view modelled risk, climate observations, and local weather.</p>}
           </section>
 
           <section className="surface-card map-detail-card mt-3">
@@ -220,7 +262,7 @@ export default function RiskMap() {
           {selected && (
             <section className="surface-card map-detail-card mt-3">
               <div className="surface-heading">
-                <div><h2>Saved climate risk assessments</h2><p>{selected.state || "Karnataka"} · not district-level risk</p></div>
+                <div><h2>Saved state predictions</h2><p>{selected.state || "Karnataka"} · not district-level risk</p></div>
                 <FiInfo />
               </div>
               {predictionError ? (
@@ -236,7 +278,7 @@ export default function RiskMap() {
                 </ul>
               ) : (
                 <p className="map-detail-empty">
-                  {predictionError || "No saved assessments for this state. Submit a climate risk assessment to add one to history."}
+                  {predictionError || "No saved predictions for this state. Submit a prediction to add one to history."}
                 </p>
               )}
             </section>

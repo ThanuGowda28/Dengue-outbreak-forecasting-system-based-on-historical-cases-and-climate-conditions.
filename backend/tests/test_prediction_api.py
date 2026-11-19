@@ -110,7 +110,7 @@ class PredictionApiTests(unittest.TestCase):
         self.assertEqual(history.status_code, 200)
         self.assertEqual(history.json["items"][0]["year"], 2026)
 
-    def test_prediction_year_validation_covers_2026_through_2030(self):
+    def test_prediction_year_validation_preserves_original_model_range(self):
         service = PredictionService(".", ".")
         service.feature_columns = ["year", "average_temperature_c", "state_ut_Karnataka"]
         service.scaler_columns = ["average_temperature_c"]
@@ -126,14 +126,14 @@ class PredictionApiTests(unittest.TestCase):
             "year": 2026,
         }
 
-        for year in (2026, 2027, 2030):
+        for year in (2021, 2025, 2026):
             with self.subTest(year=year):
                 values, _ = service.validate_and_build_features(
                     {**payload, "year": year}
                 )
                 self.assertEqual(values["year"], year)
 
-        for year in (2025, 2031):
+        for year in (2020, 2027):
             with self.subTest(year=year):
                 with self.assertRaises(PredictionInputError):
                     service.validate_and_build_features({**payload, "year": year})
@@ -268,15 +268,13 @@ class PredictionApiTests(unittest.TestCase):
         service.load_error = "model files missing"
         response = self.client.post("/api/prediction/predict", json=self._payload(), headers=self.user_headers)
         self.assertEqual(response.status_code, 503)
-        self.assertEqual(response.json["error"], "model_unavailable")
-        self.assertNotIn("model files missing", response.get_data(as_text=True))
+        self.assertEqual(response.json["error"], "model files missing")
         model_info = self.client.get(
             "/api/prediction/model-info", headers=self.user_headers
         )
         self.assertEqual(model_info.status_code, 200)
         self.assertFalse(model_info.json["available"])
-        self.assertEqual(model_info.json["error"], "model_unavailable")
-        self.assertNotIn("model files missing", model_info.get_data(as_text=True))
+        self.assertEqual(model_info.json["error"], "model files missing")
 
     def test_legacy_endpoint_reports_gone_instead_of_placeholder_data(self):
         responses = (

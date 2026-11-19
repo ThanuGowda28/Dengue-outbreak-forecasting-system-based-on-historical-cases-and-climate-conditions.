@@ -1,5 +1,10 @@
 import api from "./api.js";
 
+export async function getPredictionModelInfo() {
+  const { data } = await api.get("/prediction/model-info");
+  return data;
+}
+
 export async function submitPrediction(payload) {
   const { data } = await api.post("/prediction/predict", payload);
   return data;

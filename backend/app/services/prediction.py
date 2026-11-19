@@ -15,8 +15,6 @@ from ..ml.dataset.climate_data_acquisition import STATE_UT_COORDINATES, canonica
 
 logger = logging.getLogger(__name__)
 REQUIRED_FIELDS = ("state", "temperature", "humidity", "rainfall", "wind_speed", "pressure", "solar_radiation", "year")
-MIN_PREDICTION_YEAR = 2026
-MAX_PREDICTION_YEAR = 2030
 RECOMMENDATIONS = {
     "Low": ["Continue routine mosquito source reduction", "Avoid stagnant water", "Seek medical advice if symptoms appear"],
     "Moderate": ["Increase mosquito source reduction", "Monitor suspected cases", "Avoid stagnant water", "Seek medical advice if symptoms appear"],
@@ -137,7 +135,7 @@ class PredictionService:
             "wind_speed": (0, 100),
             "pressure": (300, 1200),
             "solar_radiation": (0, 60),
-            "year": (MIN_PREDICTION_YEAR, MAX_PREDICTION_YEAR),
+            "year": (2021, 2026),
         }
         for name, (minimum, maximum) in bounds.items():
             value = payload[name]
@@ -150,9 +148,7 @@ class PredictionService:
             if not np.isfinite(number) or not minimum <= number <= maximum:
                 raise PredictionInputError(f"{name} must be a number between {minimum} and {maximum}.")
             if name == "year" and not number.is_integer():
-                raise PredictionInputError(
-                    f"year must be an integer between {MIN_PREDICTION_YEAR} and {MAX_PREDICTION_YEAR}."
-                )
+                raise PredictionInputError("year must be an integer between 2021 and 2026.")
             values[name] = int(number) if name == "year" else number
 
         # The model uses annual climate aggregates. API pressure is received in hPa;

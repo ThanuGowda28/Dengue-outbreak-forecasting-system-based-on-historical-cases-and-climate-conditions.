@@ -66,6 +66,10 @@ class BaseConfig:
     HOSPITAL_OVERPASS_URL = os.getenv(
         "HOSPITAL_OVERPASS_URL", "https://overpass-api.de/api/interpreter"
     )
+    HOSPITAL_OVERPASS_FALLBACK_URL = os.getenv(
+        "HOSPITAL_OVERPASS_FALLBACK_URL",
+        "https://overpass.kumi.systems/api/interpreter",
+    )
     HOSPITAL_NOMINATIM_URL = os.getenv(
         "HOSPITAL_NOMINATIM_URL", "https://nominatim.openstreetmap.org"
     )

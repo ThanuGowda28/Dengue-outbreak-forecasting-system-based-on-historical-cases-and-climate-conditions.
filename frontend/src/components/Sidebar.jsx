@@ -22,7 +22,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 
 const userItems = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-  { label: "Climate Risk Assessment", to: "/prediction", icon: ChartNoAxesCombined },
+  { label: "Prediction", to: "/prediction", icon: ChartNoAxesCombined },
   { label: "Forecasting", to: "/forecasting", icon: ChartNoAxesCombined },
   { label: "Weather", to: "/weather", icon: CloudSun },
   { label: "Risk Map", to: "/risk-map", icon: Map },
@@ -35,7 +35,7 @@ const userItems = [
 
 const adminItems = [
   { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Climate Risk Assessment", to: "/prediction", icon: ChartNoAxesCombined },
+  { label: "Prediction", to: "/prediction", icon: ChartNoAxesCombined },
   { label: "Forecasting", to: "/forecasting", icon: ChartNoAxesCombined },
   { label: "Weather", to: "/weather", icon: CloudSun },
   { label: "Risk Map", to: "/risk-map", icon: Map },
@@ -51,7 +51,8 @@ const adminItems = [
   { label: "Research tools", to: "/train-model", icon: ChartNoAxesCombined },
   { label: "Reports", to: "/reports", icon: FileText },
   { label: "Alert management", to: "/admin/alerts", icon: Bell },
-  { label: "Hospital management", to: "/admin/hospitals", icon: HeartPulse }
+  { label: "Hospital management", to: "/admin/hospitals", icon: HeartPulse },
+  { label: "Mosquito detection reports", to: "/admin/mosquito-detection", icon: Map }
 ];
 
 export default function Sidebar({ mobileOpen = false, onNavigate }) {

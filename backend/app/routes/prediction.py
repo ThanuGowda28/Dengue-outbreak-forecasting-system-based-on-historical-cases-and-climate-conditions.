@@ -66,21 +66,15 @@ def predict_dengue_risk():
         return failure
     service = current_app.extensions.get("prediction_service")
     if service is None or not service.available:
-        return jsonify({
-            "message": "Prediction model is unavailable.",
-            "error": "model_unavailable",
-        }), 503
+        reason = service.load_error if service else "Prediction service was not initialized."
+        return jsonify({"message": "Prediction model is unavailable.", "error": reason}), 503
     payload = request.get_json(silent=True)
     try:
         prediction = service.predict(payload)
     except PredictionInputError as error:
         return jsonify({"message": str(error), "error": "invalid_input"}), 400
     except ModelUnavailableError as error:
-        current_app.logger.warning("Prediction model unavailable: %s", error)
-        return jsonify({
-            "message": "Prediction model is unavailable.",
-            "error": "model_unavailable",
-        }), 503
+        return jsonify({"message": "Prediction model is unavailable.", "error": str(error)}), 503
     except PredictionServiceError as error:
         current_app.logger.exception("Prediction service failed")
         return jsonify({"message": str(error), "error": "prediction_failed"}), 500
@@ -215,17 +209,9 @@ def latest_prediction_result():
 def prediction_model_info():
     service = current_app.extensions.get("prediction_service")
     if service is None:
-        return jsonify({
-            "available": False,
-            "message": "Prediction service was not initialized.",
-            "error": "model_unavailable",
-        }), 200
+        return jsonify({"available": False, "message": "Prediction service was not initialized."}), 200
     if not service.available:
-        return jsonify({
-            "available": False,
-            "message": "Prediction model is unavailable.",
-            "error": "model_unavailable",
-        }), 200
+        return jsonify({"available": False, "message": "Prediction model is unavailable.", "error": service.load_error}), 200
     return jsonify({
         "available": True,
         "model": "Ensemble Neural Network (soft voting)",
@@ -241,7 +227,7 @@ def prediction_model_info():
             "wind_speed": "annual mean m/s",
             "pressure": "hPa (converted to kPa for model)",
             "solar_radiation": "annual mean MJ/m²/day",
-            "year": "2026-2030",
+            "year": "2021-2026",
         },
         "warning": "Annual climate aggregate classifier; softmax scores are not calibrated confidence estimates. Research output only, not medical advice.",
     }), 200

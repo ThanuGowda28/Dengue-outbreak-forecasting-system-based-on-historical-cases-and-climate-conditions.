@@ -149,16 +149,6 @@ class RiskMapApiTests(unittest.TestCase):
         self.assertIn("300 days", response.json["message"])
         self.assertEqual(self.prediction_service.inputs, [])
 
-    def test_risk_map_excludes_extreme_daily_rainfall_spikes(self):
-        observations = StubWeatherProvider().history(None, None, None, None)
-        observations[0]["precipitation_mm"] = 1000
-
-        from backend.app.routes.risk_map import _aggregate_climate
-
-        climate = _aggregate_climate(observations)
-
-        self.assertEqual(climate["rainfall"], 364 * 1.2)
-
     def test_risk_map_returns_service_unavailable_without_model(self):
         self.app.extensions["prediction_service"].available = False
         with patch("backend.app.routes.risk_map.get_weather_provider") as provider_factory:
