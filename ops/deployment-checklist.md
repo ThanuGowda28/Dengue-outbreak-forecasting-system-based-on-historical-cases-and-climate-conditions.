@@ -6,6 +6,8 @@
 - [ ] Set unique `SECRET_KEY` and `JWT_SECRET_KEY` values (at least 32 characters each); store them in the host's secret manager.
 - [ ] Configure a dedicated least-privilege MySQL account, TLS for remote database traffic, automated encrypted backups, and restore tests.
 - [ ] Configure `FRONTEND_ORIGIN` to the exact deployed frontend origins.
+- [ ] Set `DATABASE_URL` to MySQL or configure all `DB_*` fields; production rejects SQLite.
+- [ ] Set `REDIS_URL` or both Celery Redis URLs for alert delivery.
 - [ ] Set `OPENWEATHER_API_KEY`; NASA POWER remains the historical climate provider.
 - [ ] Confirm model artifact bundle presence: `ensemble_model.keras`, `scaler.pkl`, `label_encoder.pkl`, plus `training_metrics.json` and feature schema metadata.
 - [ ] Review model/data provenance, validation results, intended use, and limitations; the application is not a clinical decision system.
@@ -13,7 +15,7 @@
 - [ ] Build the frontend and backend images from reviewed source; scan image/dependency vulnerabilities.
 - [ ] Put the frontend behind HTTPS and a trusted reverse proxy; configure TLS, DNS, and HSTS at that proxy.
 - [ ] Configure centralized log collection, retention, alerting, resource requests/limits, and health probes.
-- [ ] Verify weather provider quotas, process-local cache/rate-limit behavior, and any multi-replica restrictions.
+- [ ] Verify provider quotas, process-local cache/auth-rate-limit behavior, and any multi-replica restrictions.
 - [ ] Run the health checks, smoke tests, and user-role authorization tests against the deployment candidate.
 
 ## Release and rollback

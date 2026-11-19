@@ -66,15 +66,21 @@ def predict_dengue_risk():
         return failure
     service = current_app.extensions.get("prediction_service")
     if service is None or not service.available:
-        reason = service.load_error if service else "Prediction service was not initialized."
-        return jsonify({"message": "Prediction model is unavailable.", "error": reason}), 503
+        return jsonify({
+            "message": "Prediction model is unavailable.",
+            "error": "model_unavailable",
+        }), 503
     payload = request.get_json(silent=True)
     try:
         prediction = service.predict(payload)
     except PredictionInputError as error:
         return jsonify({"message": str(error), "error": "invalid_input"}), 400
     except ModelUnavailableError as error:
-        return jsonify({"message": "Prediction model is unavailable.", "error": str(error)}), 503
+        current_app.logger.warning("Prediction model unavailable: %s", error)
+        return jsonify({
+            "message": "Prediction model is unavailable.",
+            "error": "model_unavailable",
+        }), 503
     except PredictionServiceError as error:
         current_app.logger.exception("Prediction service failed")
         return jsonify({"message": str(error), "error": "prediction_failed"}), 500
@@ -209,9 +215,17 @@ def latest_prediction_result():
 def prediction_model_info():
     service = current_app.extensions.get("prediction_service")
     if service is None:
-        return jsonify({"available": False, "message": "Prediction service was not initialized."}), 200
+        return jsonify({
+            "available": False,
+            "message": "Prediction service was not initialized.",
+            "error": "model_unavailable",
+        }), 200
     if not service.available:
-        return jsonify({"available": False, "message": "Prediction model is unavailable.", "error": service.load_error}), 200
+        return jsonify({
+            "available": False,
+            "message": "Prediction model is unavailable.",
+            "error": "model_unavailable",
+        }), 200
     return jsonify({
         "available": True,
         "model": "Ensemble Neural Network (soft voting)",

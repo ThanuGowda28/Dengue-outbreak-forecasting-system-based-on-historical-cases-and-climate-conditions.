@@ -38,7 +38,8 @@ class ProductionConfigTests(unittest.TestCase):
         config = get_config()
         self.assertFalse(config.DEBUG)
         self.assertFalse(config.LOCAL_DEMO_MODE)
-        self.assertTrue(config.REQUIRE_MODEL_AT_STARTUP)
+        self.assertFalse(config.REQUIRE_MODEL_AT_STARTUP)
+        self.assertFalse(config.AUTO_MIGRATE_DATABASE)
 
     def test_requires_database_provider_and_mail_settings(self):
         for name in (
@@ -52,8 +53,6 @@ class ProductionConfigTests(unittest.TestCase):
             "MAIL_DEFAULT_SENDER",
             "MAIL_USERNAME",
             "MAIL_PASSWORD",
-            "CELERY_BROKER_URL",
-            "CELERY_RESULT_BACKEND",
         ):
             with self.subTest(name=name):
                 with patch.dict(os.environ, {name: ""}):
@@ -70,6 +69,61 @@ class ProductionConfigTests(unittest.TestCase):
     def test_rejects_placeholder_secret_and_provider_values(self):
         with patch.dict(os.environ, {"OPENWEATHER_API_KEY": "SET-THROUGH-SECRET-MANAGER"}):
             with self.assertRaisesRegex(RuntimeError, "OPENWEATHER_API_KEY"):
+                get_config()
+
+    def test_rejects_sqlite_production_database(self):
+        with patch.dict(os.environ, {"DATABASE_URL": "sqlite:///local.db"}):
+            with self.assertRaisesRegex(RuntimeError, "must use mysql"):
+                get_config()
+
+    def test_accepts_mysql_url_and_redis_url_without_component_variables(self):
+        environment = dict(self.environment)
+        for name in ("DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD"):
+            environment.pop(name)
+        environment.update({
+            "DATABASE_URL": "mysql+pymysql://app:password@mysql.example.com:3306/dengue",
+            "REDIS_URL": "rediss://redis.example.com:6380/0",
+        })
+        environment.pop("CELERY_BROKER_URL")
+        environment.pop("CELERY_RESULT_BACKEND")
+        with patch.dict(os.environ, environment, clear=True):
+            config = get_config()
+        self.assertFalse(config.DEBUG)
+        self.assertTrue(
+            str(config.SQLALCHEMY_DATABASE_URI).startswith(
+                "mysql+pymysql://app:***@mysql.example.com:3306/dengue"
+            )
+        )
+        self.assertEqual(config.CELERY_BROKER_URL, environment["REDIS_URL"])
+
+    def test_requires_a_redis_url_for_production(self):
+        with patch.dict(
+            os.environ,
+            {
+                "CELERY_BROKER_URL": "",
+                "CELERY_RESULT_BACKEND": "",
+                "REDIS_URL": "",
+            },
+        ):
+            with self.assertRaisesRegex(RuntimeError, "REDIS_URL or CELERY_BROKER_URL"):
+                get_config()
+
+    def test_rejects_incomplete_mysql_url(self):
+        with patch.dict(os.environ, {
+            "DATABASE_URL": "mysql+pymysql://app@mysql.example.com/dengue",
+        }):
+            with self.assertRaisesRegex(RuntimeError, "must include a MySQL"):
+                get_config()
+
+    def test_rejects_invalid_mysql_and_redis_urls(self):
+        with patch.dict(
+            os.environ,
+            {"DATABASE_URL": "mysql+pymysql://app:password@mysql.example.com:bad/db"},
+        ):
+            with self.assertRaisesRegex(RuntimeError, "valid MySQL port"):
+                get_config()
+        with patch.dict(os.environ, {"REDIS_URL": "redis:///0"}):
+            with self.assertRaisesRegex(RuntimeError, "Redis host"):
                 get_config()
 
     def test_rejects_invalid_database_port_and_smtp_configuration(self):

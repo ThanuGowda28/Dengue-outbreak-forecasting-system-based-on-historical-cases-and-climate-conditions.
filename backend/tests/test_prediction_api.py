@@ -268,7 +268,15 @@ class PredictionApiTests(unittest.TestCase):
         service.load_error = "model files missing"
         response = self.client.post("/api/prediction/predict", json=self._payload(), headers=self.user_headers)
         self.assertEqual(response.status_code, 503)
-        self.assertEqual(response.json["error"], "model files missing")
+        self.assertEqual(response.json["error"], "model_unavailable")
+        self.assertNotIn("model files missing", response.get_data(as_text=True))
+        model_info = self.client.get(
+            "/api/prediction/model-info", headers=self.user_headers
+        )
+        self.assertEqual(model_info.status_code, 200)
+        self.assertFalse(model_info.json["available"])
+        self.assertEqual(model_info.json["error"], "model_unavailable")
+        self.assertNotIn("model files missing", model_info.get_data(as_text=True))
 
     def test_legacy_endpoint_reports_gone_instead_of_placeholder_data(self):
         responses = (

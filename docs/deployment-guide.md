@@ -31,11 +31,12 @@ Set and verify:
 - `APP_ENV=production`
 - Unique `SECRET_KEY` and `JWT_SECRET_KEY`
 - `FRONTEND_ORIGIN` as a comma-separated list of exact HTTPS frontend origins
-- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`
+- `DATABASE_URL` using MySQL, or `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
+  and `DB_PASSWORD`
 - `OPENWEATHER_API_KEY`
 - `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`,
   `MAIL_PASSWORD`, and `MAIL_DEFAULT_SENDER`
-- `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND` pointing to a private Redis
+- `REDIS_URL`, or `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND`, pointing to a private Redis
   service. Docker Compose provides Redis internally; other deployment platforms
   must provision Redis and background worker/Beat processes.
 - `MOSQUITO_DETECTOR_PATH` pointing to a compatible, trained YOLO weights file.
@@ -51,8 +52,10 @@ Set and verify:
   container defaults
 
 Production startup fails if required secrets, MySQL settings, HTTPS CORS
-origins, OpenWeather, SMTP settings, Redis settings, or the saved TensorFlow model,
-scaler, and label encoder are missing or invalid. Never use development secret
+origins, OpenWeather, SMTP settings, or Redis settings are missing or invalid.
+If TensorFlow or its model artifacts cannot load, model prediction endpoints
+return an explicit unavailable response while experimental trend forecasting
+continues to work. Never use development secret
 values, localhost CORS origins, or an empty database password in production.
 Configure managed-MySQL TLS/CA settings according to the provider's
 instructions, and do not expose MySQL publicly.
@@ -65,17 +68,15 @@ origin.
 
 ## Build, migrate, and start
 
-Run from the repository root with a completed production `.env`:
+Run from the repository root with a completed production `.env`. Compose runs
+the migration service once and waits for it to complete before starting the API:
 
 ```powershell
 docker compose -f docker-compose.yml -f docker-compose.prod.yml config
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d mysql
-docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm backend flask --app backend.run db upgrade
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-Run the migration once as a release step, not concurrently from every backend
-replica. The Compose MySQL volume persists database data; configure encrypted
+The Compose MySQL volume persists database data; configure encrypted
 off-host backups and test restoration.
 
 Mosquito image uploads are stored privately under the persistent
@@ -116,10 +117,10 @@ Invoke-RestMethod https://your-frontend.example.com/api/health/model
 Invoke-RestMethod https://your-frontend.example.com/api/health/weather
 ```
 
-The backend container health check calls `/api/health/model`; the container
-does not become healthy unless TensorFlow and the saved model artifacts load.
-Verify database health reports `available`, model health reports `available`,
-and weather health reports `configured: true`. Weather health checks
+The backend container health check calls `/api/health` for liveness; model
+health is independently reported by `/api/health/model`. Verify database
+health reports `available`, and weather health reports `configured: true`.
+Weather health checks
 configuration only; make authenticated current/forecast calls to verify
 provider connectivity and quota. Confirm browser requests use HTTPS and the
 expected API origin. Provider and database credentials must remain server-side.
@@ -145,17 +146,23 @@ Validate those in staging before release.
 
 The root `render.yaml` defines a Docker Web Service using
 `backend/Dockerfile`, Python 3.12, Gunicorn, Render's assigned `PORT`, and
-`/api/health/model` as the readiness endpoint. Connect the repository in
+`/api/health` as its liveness endpoint. Connect the repository in
 Render, select the root Blueprint, and create the service. Render generates
 distinct Flask/JWT secrets; configure all `sync: false` variables in the
-Render dashboard before the first successful deploy.
+Render dashboard before the first successful deploy. Provision external MySQL
+and Redis services and set `DATABASE_URL` and `REDIS_URL`; Render does not
+provide the MySQL service used by this app.
 
-Render does not provide the MySQL service used by this app. Supply `DB_HOST`,
-`DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` for an externally hosted
-MySQL database and allow connections from Render. Verify the database
-provider's TLS requirements; the application currently has no dedicated
-MySQL CA/SSL environment setting. Supply a valid OpenWeather key and SMTP
-host/from address as well.
+Allow the external database and Redis services to accept connections from
+Render. Supply a valid OpenWeather key and SMTP host/from address as well.
+The configured pre-deploy command applies database migrations once before
+the service update; normal app startup does not race migrations across replicas.
+For asynchronous alert delivery, add two Render Background Worker services
+using the same repository Dockerfile and production environment: run
+`celery -A backend.celery_worker:celery worker --loglevel=info` for the worker
+and `celery -A backend.celery_worker:celery beat --loglevel=info` for the
+scheduler. Use the same `DATABASE_URL`, `REDIS_URL`, signing keys, SMTP,
+frontend origin, and weather key on each service.
 
 After deployment, copy the assigned `https://<service>.onrender.com` URL and
 set `FRONTEND_ORIGIN` to the exact HTTPS origin serving the frontend. Save the
@@ -166,9 +173,6 @@ Swagger UI is available at `/api/docs`, and the raw OpenAPI document is at
 `/api/openapi.yaml`. Render's dashboard provides build and runtime deployment
 logs.
 
-Run `flask --app backend.run db upgrade` once against production MySQL before
-using the service. Do not run migrations concurrently from each replica.
-
 ## Deploy the backend to Railway and frontend to Vercel
 
 ### Railway backend
@@ -177,11 +181,12 @@ Create a Railway project from the connected GitHub repository and configure
 the service to use the repository root. The root `railway.toml` selects
 `backend/Dockerfile`; the Docker image uses Python 3.12, installs
 `backend/requirements.txt` (including Gunicorn), binds Gunicorn to Railway's
-`PORT`, and uses `/api/health/model` as the readiness probe. Add a Railway
+`PORT`, applies migrations with its pre-deploy command, and uses `/api/health`
+as its liveness probe. Add a Railway
 MySQL service to the same project and set the backend service variables
-`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` from that
-service's MySQL connection values. The Flask configuration does not read
-Railway's MySQL variable names automatically.
+`DATABASE_URL` and `REDIS_URL` from the MySQL and Redis service connection
+values. The Flask configuration validates a MySQL URL and does not silently
+fall back to SQLite in production.
 
 Set these backend variables through Railway's Variables panel; do not put
 secret values in `railway.toml`:
@@ -189,7 +194,10 @@ secret values in `railway.toml`:
 - `APP_ENV=production`
 - `SECRET_KEY` and `JWT_SECRET_KEY`: distinct random values, at least 32
   characters each
-- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
+- `DATABASE_URL` as a MySQL URL
+- `REDIS_URL` for the Celery broker and result backend (or separate
+  `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND`)
+- `AUTO_MIGRATE_DATABASE=false`
 - `OPENWEATHER_API_KEY`
 - `MAIL_SERVER=smtp.gmail.com`, `MAIL_PORT=587`, `MAIL_USE_TLS=true`,
   `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_DEFAULT_SENDER`
@@ -214,10 +222,11 @@ Create a Gmail App Password in your Google Account after enabling 2-Step
 Verification. Do not put the account password here, share the App Password, or
 commit `.env`.
 
-After setting DB variables, run `flask --app backend.run db upgrade` once
-using Railway's service shell or a one-off deployment command. Do not run it
-from every replica. The saved TensorFlow model files are part of the Docker
-build and production startup fails if they cannot load.
+The pre-deploy command runs migrations once before the service update. Keep
+one backend replica unless you configure shared storage for the process-local
+rate limits and weather cache. Prediction endpoints return an explicit
+unavailable response if TensorFlow/model loading fails; trend forecasting
+remains available.
 
 ### Vercel frontend
 

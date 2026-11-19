@@ -1,9 +1,16 @@
 services:
+  db-migrate:
+    environment:
+      APP_ENV: development
+      FRONTEND_ORIGIN: http://localhost:5173
+      FLASK_DEBUG: "1"
+      DATABASE_URL: ""
   backend:
     environment:
       APP_ENV: development
       FLASK_DEBUG: "1"
       FRONTEND_ORIGIN: http://localhost:5173
+      DATABASE_URL: ""
     volumes:
       - ./backend:/app/backend
       - ./backend/app/ml/models:/app/backend/app/ml/models:ro
@@ -11,6 +18,16 @@ services:
     command: ["flask", "--app", "backend.run", "run", "--host=0.0.0.0", "--port=5000", "--debug"]
     ports:
       - "5000:5000"
+  alert-worker:
+    environment:
+      APP_ENV: development
+      FRONTEND_ORIGIN: http://localhost:5173
+      DATABASE_URL: ""
+  alert-beat:
+    environment:
+      APP_ENV: development
+      FRONTEND_ORIGIN: http://localhost:5173
+      DATABASE_URL: ""
   frontend:
     build:
       args:

@@ -3,6 +3,8 @@ services:
     environment:
       APP_ENV: production
       FLASK_DEBUG: "0"
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:?Set FRONTEND_ORIGIN to the deployed HTTPS origin}
+      AUTO_MIGRATE_DATABASE: "false"
     ports: []
   frontend:
     ports:

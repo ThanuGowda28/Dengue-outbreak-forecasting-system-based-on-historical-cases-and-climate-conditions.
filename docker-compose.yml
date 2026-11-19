@@ -38,6 +38,9 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
+      DATABASE_URL: ""
+      PORT: 5000
+      REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
       APP_ENV: production
@@ -51,19 +54,47 @@ services:
       - detection_data:/app/backend/instance/mosquito_detections
       - log_data:/app/backend/logs
     depends_on:
-      backend:
-        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks: [dengue-internal]
+      db-migrate:
+        condition: service_completed_successfully
+    networks: [dengue-internal, dengue-egress]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health', timeout=3)"]
       interval: 30s
       timeout: 5s
       start_period: 90s
       retries: 3
+
+  db-migrate:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: "no"
+    env_file: .env
+    environment:
+      APP_ENV: production
+      FLASK_DEBUG: "0"
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DATABASE_URL: ""
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:?Set FRONTEND_ORIGIN to the deployed HTTPS origin}
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      ML_MODEL_DIR: /app/backend/app/ml/models
+      ML_PROCESSED_DIR: /app/backend/app/ml/dataset/processed
+      LOG_DIR: /app/backend/logs
+      UPLOAD_FOLDER: /app/backend/instance/uploads
+    command: ["flask", "--app", "backend.run", "db", "upgrade"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [dengue-internal]
 
   alert-worker:
     build:
@@ -74,6 +105,8 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
+      DATABASE_URL: ""
+      REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
       APP_ENV: production
@@ -86,13 +119,13 @@ services:
       - upload_data:/app/backend/instance/uploads
       - log_data:/app/backend/logs
     depends_on:
-      backend:
-        condition: service_healthy
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks: [dengue-internal]
+      backend:
+        condition: service_healthy
+    networks: [dengue-internal, dengue-egress]
 
   alert-beat:
     build:
@@ -103,6 +136,8 @@ services:
     environment:
       DB_HOST: mysql
       DB_PORT: 3306
+      DATABASE_URL: ""
+      REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
       APP_ENV: production
@@ -119,7 +154,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    networks: [dengue-internal]
+      backend:
+        condition: service_healthy
+    networks: [dengue-internal, dengue-egress]
 
   frontend:
     build:
@@ -145,4 +182,6 @@ volumes:
 networks:
   dengue-internal:
     internal: true
+  dengue-egress:
+    driver: bridge
   dengue-edge:

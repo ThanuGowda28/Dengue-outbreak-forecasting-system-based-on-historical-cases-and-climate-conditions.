@@ -22,16 +22,24 @@ def email_is_configured(recipient_setting: str | None = None) -> bool:
     )
 
 
-def public_request_allowed(limit: int = 5) -> bool:
+def public_request_allowed(limit: int = 5, bucket: str = "email") -> bool:
     now = time.monotonic()
     requests = current_app.extensions.setdefault("public_email_request_times", {})
-    key = request.remote_addr or "unknown"
+    key = f"{bucket}:{request.remote_addr or 'unknown'}"
     with _public_request_lock:
         for address, timestamps in list(requests.items()):
             while timestamps and now - timestamps[0] >= 60:
                 timestamps.popleft()
             if not timestamps:
                 requests.pop(address, None)
+        if key not in requests and len(requests) >= 4096:
+            oldest = min(
+                requests,
+                key=lambda address: requests[address][0]
+                if requests[address]
+                else float("inf"),
+            )
+            requests.pop(oldest)
         timestamps = requests.setdefault(key, deque())
         if len(timestamps) >= limit:
             return False

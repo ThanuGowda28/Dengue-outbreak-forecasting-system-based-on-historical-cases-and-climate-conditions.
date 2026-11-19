@@ -96,7 +96,6 @@ class AuthApiTests(unittest.TestCase):
         self.assertNotIn("access_token", response.json)
         self.assertNotIn("refresh_token", response.json)
         self.assertFalse(response.json["user"]["is_verified"])
-
         user = User.query.filter_by(email="test@example.test").one()
         token_record = EmailVerificationToken.query.filter_by(user_id=user.id).one()
         token = self._verification_token()
@@ -135,6 +134,23 @@ class AuthApiTests(unittest.TestCase):
         )
         self.assertEqual(login.status_code, 200)
         self.assertTrue(login.json["access_token"])
+
+    def test_registration_is_rate_limited_per_client_and_route(self):
+        self.app.config["AUTH_RATE_LIMIT_PER_MINUTE"] = 1
+        first = self.client.post("/api/auth/register", json={})
+        second = self.client.post("/api/auth/register", json={})
+        self.assertEqual(first.status_code, 400)
+        self.assertEqual(second.status_code, 429)
+        self.assertEqual(second.headers["Retry-After"], "60")
+
+    def test_login_is_rate_limited_per_client_and_route(self):
+        self.app.config["AUTH_RATE_LIMIT_PER_MINUTE"] = 1
+        payload = {"email": "missing@example.test", "password": "StrongPass1!"}
+        first = self.client.post("/api/auth/login", json=payload)
+        second = self.client.post("/api/auth/login", json=payload)
+        self.assertEqual(first.status_code, 401)
+        self.assertEqual(second.status_code, 429)
+        self.assertEqual(second.headers["Retry-After"], "60")
 
     def test_expired_verification_token_is_rejected_and_can_be_resent(self):
         response = self.client.post(

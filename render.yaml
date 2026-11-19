@@ -4,21 +4,14 @@ services:
     runtime: docker
     dockerContext: .
     dockerfilePath: ./backend/Dockerfile
-    healthCheckPath: /api/health/model
+    preDeployCommand: flask --app backend.run db upgrade
+    healthCheckPath: /api/health
     envVars:
       - key: APP_ENV
         value: production
       - key: FLASK_DEBUG
         value: "0"
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        value: "3306"
-      - key: DB_NAME
-        sync: false
-      - key: DB_USER
-        sync: false
-      - key: DB_PASSWORD
+      - key: DATABASE_URL
         sync: false
       - key: SECRET_KEY
         generateValue: true
@@ -44,10 +37,10 @@ services:
         value: "false"
       - key: MAIL_TIMEOUT_SECONDS
         value: "15"
-      - key: CELERY_BROKER_URL
+      - key: REDIS_URL
         sync: false
-      - key: CELERY_RESULT_BACKEND
-        sync: false
+      - key: AUTO_MIGRATE_DATABASE
+        value: "false"
       - key: ALERT_RETRY_DELAY_SECONDS
         value: "10"
       - key: TWILIO_ACCOUNT_SID

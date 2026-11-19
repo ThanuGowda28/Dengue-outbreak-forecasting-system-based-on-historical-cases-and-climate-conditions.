@@ -104,6 +104,17 @@ class AdminApiTests(unittest.TestCase):
         self.assertEqual(unverified.status_code, 403)
         self.assertEqual(unverified.json["error"], "email_not_verified")
 
+    def test_admin_login_is_rate_limited(self):
+        self.app.config["ADMIN_LOGIN_RATE_LIMIT_PER_MINUTE"] = 1
+        payload = {"email": self.admin.email, "password": "AdminPass1!"}
+        self.assertEqual(
+            self.client.post("/api/admin/auth/login", json=payload).status_code,
+            200,
+        )
+        limited = self.client.post("/api/admin/auth/login", json=payload)
+        self.assertEqual(limited.status_code, 429)
+        self.assertEqual(limited.headers["Retry-After"], "60")
+
     def test_admin_dashboard_users_and_reports_are_protected_and_database_backed(self):
         self.assertEqual(self.client.get("/api/admin/dashboard").status_code, 401)
         self.assertEqual(

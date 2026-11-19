@@ -191,6 +191,15 @@ def _serialize_settings(settings):
 
 @auth_blueprint.post("/auth/register")
 def register():
+    if not public_request_allowed(
+        limit=int(current_app.config.get("AUTH_RATE_LIMIT_PER_MINUTE", 10)),
+        bucket="register",
+    ):
+        return (
+            jsonify({"message": "Too many requests. Try again later."}),
+            429,
+            {"Retry-After": "60"},
+        )
     data = _json_object()
     if data is None:
         return _validation_error({"body": "A JSON object is required."})
@@ -417,6 +426,15 @@ def resend_email_verification():
 
 @auth_blueprint.post("/auth/login")
 def login():
+    if not public_request_allowed(
+        limit=int(current_app.config.get("AUTH_RATE_LIMIT_PER_MINUTE", 10)),
+        bucket="login",
+    ):
+        return (
+            jsonify({"message": "Too many requests. Try again later."}),
+            429,
+            {"Retry-After": "60"},
+        )
     data = _json_object()
     if data is None:
         return _validation_error({"body": "A JSON object is required."})

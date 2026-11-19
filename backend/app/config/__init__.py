@@ -12,10 +12,14 @@ DEMO_SQLITE_PATH = PROJECT_ROOT / "instance" / "dengue_local.sqlite"
 def _database_uri():
     database_url = os.getenv("DATABASE_URL")
     if database_url and database_url.lower().startswith("sqlite:"):
+        if os.getenv("APP_ENV", os.getenv("FLASK_ENV", "development")).lower() == "production":
+            raise RuntimeError("Production DATABASE_URL must use MySQL; SQLite is not supported.")
         if database_url.lower() in {"sqlite://", "sqlite:///:memory:"}:
             return database_url
         return URL.create("sqlite", database=str(DEMO_SQLITE_PATH))
     if database_url:
+        if database_url.lower().startswith("mysql://"):
+            return "mysql+pymysql://" + database_url[len("mysql://") :]
         return database_url
     return URL.create(
         "mysql+pymysql",
@@ -79,10 +83,16 @@ class BaseConfig:
     MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "true").lower() == "true"
     MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "false").lower() == "true"
     MAIL_TIMEOUT_SECONDS = int(os.getenv("MAIL_TIMEOUT_SECONDS", "15"))
-    CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-    CELERY_RESULT_BACKEND = os.getenv(
-        "CELERY_RESULT_BACKEND",
-        os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0"),
+    REDIS_URL = os.getenv("REDIS_URL", "")
+    CELERY_BROKER_URL = (
+        os.getenv("CELERY_BROKER_URL", "").strip()
+        or REDIS_URL
+        or "redis://localhost:6379/0"
+    )
+    CELERY_RESULT_BACKEND = (
+        os.getenv("CELERY_RESULT_BACKEND", "").strip()
+        or REDIS_URL
+        or CELERY_BROKER_URL
     )
     TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
     TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
@@ -91,6 +101,16 @@ class BaseConfig:
     CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_DATABASE_URI = _database_uri()
+    AUTO_MIGRATE_DATABASE = os.getenv("AUTO_MIGRATE_DATABASE", "true").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    AUTH_RATE_LIMIT_PER_MINUTE = int(os.getenv("AUTH_RATE_LIMIT_PER_MINUTE", "10"))
+    ADMIN_LOGIN_RATE_LIMIT_PER_MINUTE = int(
+        os.getenv("ADMIN_LOGIN_RATE_LIMIT_PER_MINUTE", "5")
+    )
     MAX_CONTENT_LENGTH = ML_TRAINING_UPLOAD_MAX_BYTES
 
 
@@ -107,7 +127,8 @@ class TestingConfig(BaseConfig):
 class ProductionConfig(BaseConfig):
     DEBUG = False
     LOCAL_DEMO_MODE = False
-    REQUIRE_MODEL_AT_STARTUP = True
+    AUTO_MIGRATE_DATABASE = False
+    REQUIRE_MODEL_AT_STARTUP = False
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
@@ -121,13 +142,51 @@ def get_config():
     if environment == "production":
         secret_key = os.getenv("SECRET_KEY", "")
         jwt_secret_key = os.getenv("JWT_SECRET_KEY", "")
+        database_url = os.getenv("DATABASE_URL", "").strip()
+        if database_url:
+            parsed_database_url = urlsplit(database_url)
+            if parsed_database_url.scheme not in {"mysql", "mysql+pymysql"}:
+                raise RuntimeError(
+                    "Production DATABASE_URL must use mysql:// or mysql+pymysql://."
+                )
+            if (
+                not parsed_database_url.hostname
+                or not parsed_database_url.username
+                or not parsed_database_url.password
+                or not parsed_database_url.path.strip("/")
+            ):
+                raise RuntimeError(
+                    "Production DATABASE_URL must include a MySQL host, database, user, and password."
+                )
+            try:
+                database_port = parsed_database_url.port
+            except ValueError as error:
+                raise RuntimeError(
+                    "Production DATABASE_URL must include a valid MySQL port."
+                ) from error
+            if database_port is not None and not 1 <= database_port <= 65535:
+                raise RuntimeError(
+                    "Production DATABASE_URL port must be between 1 and 65535."
+                )
+        database_fields = ("DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD")
+        if not database_url:
+            missing_database_fields = [
+                name
+                for name in database_fields
+                if not os.getenv(name, "").strip()
+            ]
+        else:
+            missing_database_fields = []
+        broker_url = (
+            os.getenv("CELERY_BROKER_URL", "").strip()
+            or os.getenv("REDIS_URL", "").strip()
+        )
+        result_backend = (
+            os.getenv("CELERY_RESULT_BACKEND", "").strip() or broker_url
+        )
         missing = [
             name
             for name in (
-                "DB_HOST",
-                "DB_NAME",
-                "DB_USER",
-                "DB_PASSWORD",
                 "FRONTEND_ORIGIN",
                 "OPENWEATHER_API_KEY",
                 "MAIL_SERVER",
@@ -136,11 +195,12 @@ def get_config():
                 "MAIL_USERNAME",
                 "MAIL_PASSWORD",
                 "MAIL_DEFAULT_SENDER",
-                "CELERY_BROKER_URL",
-                "CELERY_RESULT_BACKEND",
             )
             if not os.getenv(name, "").strip()
         ]
+        if not broker_url:
+            missing.append("REDIS_URL or CELERY_BROKER_URL")
+        missing.extend(missing_database_fields)
         if (
             len(secret_key) < 32
             or len(jwt_secret_key) < 32
@@ -155,18 +215,24 @@ def get_config():
             for name in (
                 "SECRET_KEY",
                 "JWT_SECRET_KEY",
+                "DATABASE_URL",
                 "DB_HOST",
+                "DB_NAME",
+                "DB_USER",
                 "DB_PASSWORD",
+                "REDIS_URL",
+                "CELERY_BROKER_URL",
+                "CELERY_RESULT_BACKEND",
+                "FRONTEND_ORIGIN",
                 "OPENWEATHER_API_KEY",
                 "MAIL_SERVER",
                 "MAIL_DEFAULT_SENDER",
                 "MAIL_USERNAME",
                 "MAIL_PASSWORD",
-                "CELERY_BROKER_URL",
-                "CELERY_RESULT_BACKEND",
             )
-            if os.getenv(name, "").strip().upper().startswith(
-                ("GENERATE-", "SET-", "YOUR-")
+            if any(
+                marker in os.getenv(name, "").strip().upper()
+                for marker in ("GENERATE-", "SET-", "YOUR-", "REPLACE-")
             )
         ]
         if placeholders:
@@ -179,15 +245,22 @@ def get_config():
                 "Production requires these environment variables: "
                 + ", ".join(missing)
             )
-        broker_url = os.getenv("CELERY_BROKER_URL", "").strip()
         if urlsplit(broker_url).scheme not in {"redis", "rediss"}:
             raise RuntimeError(
-                "Production CELERY_BROKER_URL must use Redis or TLS Redis (rediss)."
+                "Production REDIS_URL or CELERY_BROKER_URL must use Redis or TLS Redis (rediss)."
             )
-        result_backend = os.getenv("CELERY_RESULT_BACKEND", broker_url).strip()
+        parsed_broker_url = urlsplit(broker_url)
+        if not parsed_broker_url.hostname:
+            raise RuntimeError(
+                "Production REDIS_URL or CELERY_BROKER_URL must include a Redis host."
+            )
         if urlsplit(result_backend).scheme not in {"redis", "rediss"}:
             raise RuntimeError(
                 "Production CELERY_RESULT_BACKEND must use Redis or TLS Redis (rediss)."
+            )
+        if not urlsplit(result_backend).hostname:
+            raise RuntimeError(
+                "Production CELERY_RESULT_BACKEND must include a Redis host."
             )
         try:
             mail_port = int(os.getenv("MAIL_PORT", "587"))
@@ -241,6 +314,9 @@ def get_config():
                     "Production FRONTEND_ORIGIN values must be HTTPS origins "
                     "without paths or localhost hosts."
                 )
+        ProductionConfig.SQLALCHEMY_DATABASE_URI = _database_uri()
+        ProductionConfig.CELERY_BROKER_URL = broker_url
+        ProductionConfig.CELERY_RESULT_BACKEND = result_backend
         return ProductionConfig
     if environment != "development":
         raise RuntimeError(

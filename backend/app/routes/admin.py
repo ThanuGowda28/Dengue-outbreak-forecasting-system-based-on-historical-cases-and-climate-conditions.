@@ -27,6 +27,7 @@ from ..models import (
     User,
     WeatherHistory,
 )
+from ..services.email import public_request_allowed
 
 admin_blueprint = Blueprint("admin", __name__)
 _EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -110,6 +111,15 @@ def _admin_required():
 
 @admin_blueprint.post("/admin/auth/login")
 def admin_login():
+    if not public_request_allowed(
+        limit=int(current_app.config.get("ADMIN_LOGIN_RATE_LIMIT_PER_MINUTE", 5)),
+        bucket="admin-login",
+    ):
+        return (
+            jsonify({"message": "Too many requests. Try again later."}),
+            429,
+            {"Retry-After": "60"},
+        )
     data = _json_object()
     if data is None or set(data) != {"email", "password"}:
         return jsonify({"message": "A JSON object with email and password is required."}), 400
